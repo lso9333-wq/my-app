@@ -1,0 +1,119 @@
+.calculator {
+  width: 320px;
+  margin: 40px auto;
+  padding: 20px;
+  background: linear-gradient(145deg, #16171a, #0d0e10);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 30px 60px rgba(0, 0, 0, 0.55);
+}
+
+.display {
+  color: var(--text);
+  font-size: 48px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  text-align: right;
+  padding: 20px 12px 28px;
+  overflow-x: auto;
+  white-space: nowrap;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.key {
+  height: 60px;
+  border: none;
+  border-radius: 14px;
+  font: inherit;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  background: linear-gradient(160deg, #2c2e33, #202226);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.08) inset,
+    0 -3px 0 rgba(0, 0, 0, 0.35) inset,
+    0 5px 0 #121316,
+    0 9px 14px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  transform: translateY(0);
+  transition:
+    transform 0.08s ease,
+    box-shadow 0.08s ease,
+    background 0.15s;
+}
+
+.key:hover {
+  background: linear-gradient(160deg, #34363c, #26282c);
+}
+
+.key:active {
+  transform: translateY(5px);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.3) inset,
+    0 0 0 #121316,
+    0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.key.function {
+  color: #0d0e10;
+  background: linear-gradient(160deg, #d4d4d6, #a9a9ac);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.5) inset,
+    0 -3px 0 rgba(0, 0, 0, 0.15) inset,
+    0 5px 0 #7c7c7f,
+    0 9px 14px rgba(0, 0, 0, 0.45);
+}
+
+.key.function:hover {
+  background: linear-gradient(160deg, #e2e2e4, #b6b6b9);
+}
+
+.key.function:active {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.4) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.1) inset,
+    0 0 0 #7c7c7f,
+    0 2px 4px rgba(0, 0, 0, 0.35);
+}
+
+.key.operator {
+  color: #fff;
+  background: linear-gradient(160deg, var(--accent-hover), var(--accent));
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.35) inset,
+    0 -3px 0 rgba(0, 0, 0, 0.2) inset,
+    0 5px 0 #383f9c,
+    0 9px 14px rgba(94, 106, 210, 0.4);
+}
+
+.key.operator:hover {
+  background: linear-gradient(160deg, #7a84e6, var(--accent-hover));
+}
+
+.key.operator:active {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.25) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.15) inset,
+    0 0 0 #383f9c,
+    0 2px 4px rgba(94, 106, 210, 0.35);
+}
+
+.key.operator.active {
+  background: linear-gradient(160deg, #fff, #e4e5ff);
+  color: var(--accent);
+}
+
+.key.zero {
+  grid-column: span 2;
+  text-align: left;
+  padding-left: 26px;
+}
