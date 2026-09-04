@@ -12,6 +12,8 @@
   --text-dim: #8a8f98;
   --accent: #5e6ad2;
   --accent-hover: #6e79db;
+  --series-left: #3987e5;
+  --series-right: #d95926;
 
   --sans: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
 
@@ -33,9 +35,6 @@ body {
   margin: 0;
   min-height: 100svh;
   background: var(--bg-glow), var(--bg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 #root {

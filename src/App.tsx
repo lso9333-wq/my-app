@@ -1,193 +1,147 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import './App.css'
+import { VideoUploader } from './components/VideoUploader'
+import { SkeletonViewer } from './components/SkeletonViewer'
+import { GaitMetricsPanel } from './components/GaitMetricsPanel'
+import { StepIntervalChart, ComparisonBarChart } from './components/GaitCharts'
+import { extractPoseFrames, getPoseDetector } from './lib/poseDetector'
+import { computeGaitMetrics } from './lib/gaitAnalysis'
+import type { AnalysisStage, GaitMetrics, PoseFrame } from './types/gait'
 
-type Operator = '+' | '-' | '×' | '÷'
-
-function calculate(a: number, b: number, op: Operator): number {
-  switch (op) {
-    case '+':
-      return a + b
-    case '-':
-      return a - b
-    case '×':
-      return a * b
-    case '÷':
-      return b === 0 ? NaN : a / b
-  }
-}
-
-let audioContext: AudioContext | null = null
-
-function playClickSound() {
-  audioContext ??= new AudioContext()
-  const oscillator = audioContext.createOscillator()
-  const gain = audioContext.createGain()
-
-  oscillator.type = 'sine'
-  oscillator.frequency.value = 800
-  gain.gain.setValueAtTime(0.1, audioContext.currentTime)
-  gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.08)
-
-  oscillator.connect(gain)
-  gain.connect(audioContext.destination)
-
-  oscillator.start()
-  oscillator.stop(audioContext.currentTime + 0.08)
-}
+const SAMPLING_FPS = 12
+const MAX_ANALYSIS_SECONDS = 20
 
 function App() {
-  const [display, setDisplay] = useState('0')
-  const [previousValue, setPreviousValue] = useState<number | null>(null)
-  const [operator, setOperator] = useState<Operator | null>(null)
-  const [waitingForOperand, setWaitingForOperand] = useState(false)
+  const analysisVideoRef = useRef<HTMLVideoElement>(null)
+  const [stage, setStage] = useState<AnalysisStage>('idle')
+  const [videoUrl, setVideoUrl] = useState<string | null>(null)
+  const [fileName, setFileName] = useState('')
+  const [progress, setProgress] = useState(0)
+  const [frames, setFrames] = useState<PoseFrame[]>([])
+  const [metrics, setMetrics] = useState<GaitMetrics | null>(null)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
-  const inputDigit = (digit: string) => {
-    if (waitingForOperand) {
-      setDisplay(digit)
-      setWaitingForOperand(false)
-    } else {
-      setDisplay(display === '0' ? digit : display + digit)
-    }
+  const reset = () => {
+    if (videoUrl) URL.revokeObjectURL(videoUrl)
+    setVideoUrl(null)
+    setFileName('')
+    setFrames([])
+    setMetrics(null)
+    setErrorMsg(null)
+    setProgress(0)
+    setStage('idle')
   }
 
-  const inputDecimal = () => {
-    if (waitingForOperand) {
-      setDisplay('0.')
-      setWaitingForOperand(false)
-      return
-    }
-    if (!display.includes('.')) {
-      setDisplay(display + '.')
-    }
-  }
+  const handleSelect = async (file: File) => {
+    reset()
+    const url = URL.createObjectURL(file)
+    setVideoUrl(url)
+    setFileName(file.name)
+    setStage('loading-model')
 
-  const clear = () => {
-    setDisplay('0')
-    setPreviousValue(null)
-    setOperator(null)
-    setWaitingForOperand(false)
-  }
+    const video = analysisVideoRef.current
+    if (!video) return
 
-  const toggleSign = () => {
-    setDisplay((Number.parseFloat(display) * -1).toString())
-  }
+    try {
+      await new Promise<void>((resolve, reject) => {
+        video.onloadedmetadata = () => resolve()
+        video.onerror = () => reject(new Error('동영상을 불러올 수 없습니다. 다른 파일로 시도해 주세요.'))
+        video.src = url
+      })
 
-  const inputPercent = () => {
-    setDisplay((Number.parseFloat(display) / 100).toString())
-  }
+      await getPoseDetector()
 
-  const performOperator = (nextOperator: Operator) => {
-    const inputValue = Number.parseFloat(display)
+      setStage('processing')
+      const extracted = await extractPoseFrames(video, {
+        samplingFps: SAMPLING_FPS,
+        maxDurationSec: MAX_ANALYSIS_SECONDS,
+        onProgress: setProgress,
+      })
 
-    if (previousValue === null) {
-      setPreviousValue(inputValue)
-    } else if (operator) {
-      const result = calculate(previousValue, inputValue, operator)
-      setDisplay(String(result))
-      setPreviousValue(result)
-    }
+      setStage('analyzing')
+      const computed = computeGaitMetrics(extracted)
 
-    setWaitingForOperand(true)
-    setOperator(nextOperator)
-  }
-
-  const performEquals = () => {
-    const inputValue = Number.parseFloat(display)
-
-    if (previousValue !== null && operator) {
-      const result = calculate(previousValue, inputValue, operator)
-      setDisplay(String(result))
-      setPreviousValue(null)
-      setOperator(null)
-      setWaitingForOperand(true)
+      setFrames(extracted)
+      setMetrics(computed)
+      setStage('done')
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : '분석 중 알 수 없는 오류가 발생했습니다.')
+      setStage('error')
     }
   }
 
   return (
-    <div className="calculator">
-      <div className="display">{display}</div>
-      <div
-        className="keypad"
-        onClickCapture={(e) => {
-          if (e.target instanceof HTMLButtonElement) {
-            playClickSound()
-          }
-        }}
-      >
-        <button className="key function" onClick={clear}>
-          {display !== '0' || previousValue !== null ? 'C' : 'AC'}
-        </button>
-        <button className="key function" onClick={toggleSign}>
-          +/-
-        </button>
-        <button className="key function" onClick={inputPercent}>
-          %
-        </button>
-        <button
-          className={`key operator ${operator === '÷' ? 'active' : ''}`}
-          onClick={() => performOperator('÷')}
-        >
-          ÷
-        </button>
+    <div className="gait-app">
+      {/* 프레임 분석에만 쓰이는 숨김 비디오 엘리먼트 */}
+      <video ref={analysisVideoRef} muted playsInline hidden />
 
-        <button className="key" onClick={() => inputDigit('7')}>
-          7
-        </button>
-        <button className="key" onClick={() => inputDigit('8')}>
-          8
-        </button>
-        <button className="key" onClick={() => inputDigit('9')}>
-          9
-        </button>
-        <button
-          className={`key operator ${operator === '×' ? 'active' : ''}`}
-          onClick={() => performOperator('×')}
-        >
-          ×
-        </button>
+      <header className="app-header">
+        <h1>보행 분석</h1>
+        <p className="app-subtitle">
+          핸드폰으로 옆에서 촬영한 걷는 영상을 업로드하면, 브라우저에서 곧바로 걸음걸이를 분석합니다.
+        </p>
+        <p className="disclaimer">
+          ⚠️ 참고용 도구입니다. 의료적 진단이나 전문가의 보행 평가를 대체할 수 없습니다.
+        </p>
+      </header>
 
-        <button className="key" onClick={() => inputDigit('4')}>
-          4
-        </button>
-        <button className="key" onClick={() => inputDigit('5')}>
-          5
-        </button>
-        <button className="key" onClick={() => inputDigit('6')}>
-          6
-        </button>
-        <button
-          className={`key operator ${operator === '-' ? 'active' : ''}`}
-          onClick={() => performOperator('-')}
-        >
-          -
-        </button>
+      {stage === 'idle' && <VideoUploader onSelect={handleSelect} />}
 
-        <button className="key" onClick={() => inputDigit('1')}>
-          1
-        </button>
-        <button className="key" onClick={() => inputDigit('2')}>
-          2
-        </button>
-        <button className="key" onClick={() => inputDigit('3')}>
-          3
-        </button>
-        <button
-          className={`key operator ${operator === '+' ? 'active' : ''}`}
-          onClick={() => performOperator('+')}
-        >
-          +
-        </button>
+      {(stage === 'loading-model' || stage === 'processing' || stage === 'analyzing') && (
+        <div className="progress-panel">
+          <p className="progress-file">{fileName}</p>
+          {stage === 'loading-model' && <p>포즈 인식 모델을 불러오는 중...</p>}
+          {stage === 'processing' && (
+            <>
+              <p>영상 프레임 분석 중... {Math.round(progress * 100)}%</p>
+              <div className="progress-bar">
+                <div className="progress-bar-fill" style={{ width: `${progress * 100}%` }} />
+              </div>
+            </>
+          )}
+          {stage === 'analyzing' && <p>보행 지표 계산 중...</p>}
+        </div>
+      )}
 
-        <button className="key zero" onClick={() => inputDigit('0')}>
-          0
-        </button>
-        <button className="key" onClick={inputDecimal}>
-          .
-        </button>
-        <button className="key operator equals" onClick={performEquals}>
-          =
-        </button>
-      </div>
+      {stage === 'error' && (
+        <div className="error-panel">
+          <p>{errorMsg}</p>
+          <button type="button" onClick={reset}>
+            다시 시도
+          </button>
+        </div>
+      )}
+
+      {stage === 'done' && metrics && videoUrl && (
+        <div className="results">
+          <SkeletonViewer videoUrl={videoUrl} frames={frames} />
+          <GaitMetricsPanel metrics={metrics} />
+
+          {metrics.totalSteps >= 2 && (
+            <>
+              <StepIntervalChart series={metrics.stepIntervalSeries} />
+              <div className="chart-row">
+                <ComparisonBarChart
+                  title="좌우 걸음 간격 비교"
+                  leftValue={metrics.leftMeanStepIntervalSec * 1000}
+                  rightValue={metrics.rightMeanStepIntervalSec * 1000}
+                  format={(v) => `${v.toFixed(0)}ms`}
+                />
+                <ComparisonBarChart
+                  title="좌우 보폭 비교 (상대 단위)"
+                  leftValue={metrics.leftMeanStepLengthNorm}
+                  rightValue={metrics.rightMeanStepLengthNorm}
+                  format={(v) => v.toFixed(2)}
+                />
+              </div>
+            </>
+          )}
+
+          <button type="button" className="reset-button" onClick={reset}>
+            다른 영상 분석하기
+          </button>
+        </div>
+      )}
     </div>
   )
 }
