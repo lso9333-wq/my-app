@@ -1,32 +1,10 @@
 import type { GaitMetrics, PoseFrame, Side, StepEvent } from '../types/gait'
-
-function mean(values: number[]): number {
-  if (values.length === 0) return 0
-  return values.reduce((a, b) => a + b, 0) / values.length
-}
-
-function stddev(values: number[]): number {
-  if (values.length === 0) return 0
-  const m = mean(values)
-  return Math.sqrt(mean(values.map((v) => (v - m) ** 2)))
-}
+import { mean, movingAverage, stddev } from './mathUtils'
 
 /** 두 값의 좌우 대칭 지수(%). 0에 가까울수록 대칭적. */
 function symmetryPercent(a: number, b: number): number {
   if (a === 0 && b === 0) return 0
   return (Math.abs(a - b) / ((a + b) / 2)) * 100
-}
-
-function movingAverage(values: number[], window: number): number[] {
-  if (window <= 1) return values.slice()
-  const half = Math.floor(window / 2)
-  return values.map((_, i) => {
-    const start = Math.max(0, i - half)
-    const end = Math.min(values.length, i + half + 1)
-    let sum = 0
-    for (let j = start; j < end; j++) sum += values[j]
-    return sum / (end - start)
-  })
 }
 
 /** 골반-발목 거리로 다리 길이(픽셀)를 추정해 프레임별 정규화 스케일로 사용 */

@@ -38,7 +38,9 @@ export interface ExtractOptions {
   /** 초당 분석 프레임 수 */
   samplingFps: number
   minScore?: number
-  /** 분석할 최대 길이(초). 영상이 더 길면 앞부분만 분석한다. */
+  /** 분석을 시작할 시점(초). 기본값 0. */
+  startTimeSec?: number
+  /** startTimeSec부터 분석할 최대 길이(초). 구간이 더 길면 앞부분만 분석한다. */
   maxDurationSec?: number
   onProgress?: (ratio: number) => void
 }
@@ -53,12 +55,12 @@ export async function extractPoseFrames(
   opts: ExtractOptions,
 ): Promise<PoseFrame[]> {
   const detector = await getPoseDetector()
-  const { samplingFps, minScore = 0.3, maxDurationSec, onProgress } = opts
-  const duration = maxDurationSec ? Math.min(video.duration, maxDurationSec) : video.duration
+  const { samplingFps, minScore = 0.3, startTimeSec = 0, maxDurationSec, onProgress } = opts
+  const end = maxDurationSec ? Math.min(video.duration, startTimeSec + maxDurationSec) : video.duration
   const step = 1 / samplingFps
   const frames: PoseFrame[] = []
 
-  for (let t = 0; t < duration; t += step) {
+  for (let t = startTimeSec; t < end; t += step) {
     await seekTo(video, t)
     const poses = await detector.estimatePoses(video, { flipHorizontal: false })
     const kp = poses[0]?.keypoints
@@ -75,6 +77,10 @@ export async function extractPoseFrames(
       const rightAnkle = get('right_ankle')
       const leftShoulder = get('left_shoulder')
       const rightShoulder = get('right_shoulder')
+      const leftElbow = get('left_elbow')
+      const rightElbow = get('right_elbow')
+      const leftWrist = get('left_wrist')
+      const rightWrist = get('right_wrist')
 
       const usable = [leftHip, rightHip, leftAnkle, rightAnkle].every((p) => p.score >= minScore)
       if (usable) {
@@ -88,11 +94,15 @@ export async function extractPoseFrames(
           rightAnkle,
           leftShoulder,
           rightShoulder,
+          leftElbow,
+          rightElbow,
+          leftWrist,
+          rightWrist,
           keypoints: kp.map((p) => ({ name: p.name ?? '', x: p.x, y: p.y, score: p.score ?? 0 })),
         })
       }
     }
-    onProgress?.(Math.min(t / duration, 1))
+    onProgress?.(Math.min((t - startTimeSec) / (end - startTimeSec || 1), 1))
   }
 
   onProgress?.(1)

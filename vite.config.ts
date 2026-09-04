@@ -12,4 +12,9 @@ export default defineConfig({
       '@mediapipe/pose': path.resolve(import.meta.dirname, 'src/shims/mediapipe-pose-shim.ts'),
     },
   },
+  server: {
+    proxy: {
+      '/api': 'http://localhost:3001',
+    },
+  },
 })

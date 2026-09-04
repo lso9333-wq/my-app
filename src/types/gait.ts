@@ -17,6 +17,10 @@ export interface PoseFrame {
   rightAnkle: Point
   leftShoulder: Point
   rightShoulder: Point
+  leftElbow: Point
+  rightElbow: Point
+  leftWrist: Point
+  rightWrist: Point
   /** 프레임 전체 원본 키포인트 (스켈레톤 그리기용) */
   keypoints: { name: string; x: number; y: number; score: number }[]
 }

@@ -128,9 +128,18 @@ interface ComparisonChartProps {
   leftValue: number
   rightValue: number
   format: (v: number) => string
+  leftLabel?: string
+  rightLabel?: string
 }
 
-export function ComparisonBarChart({ title, leftValue, rightValue, format }: ComparisonChartProps) {
+export function ComparisonBarChart({
+  title,
+  leftValue,
+  rightValue,
+  format,
+  leftLabel = '왼쪽',
+  rightLabel = '오른쪽',
+}: ComparisonChartProps) {
   const w = 280
   const h = 160
   const pad = { top: 12, right: 16, bottom: 28, left: 16 }
@@ -140,8 +149,8 @@ export function ComparisonBarChart({ title, leftValue, rightValue, format }: Com
   const barW = 56
   const gap = 2
   const items = [
-    { label: '왼쪽', value: leftValue, color: 'var(--series-left)' },
-    { label: '오른쪽', value: rightValue, color: 'var(--series-right)' },
+    { label: leftLabel, value: leftValue, color: 'var(--series-left)' },
+    { label: rightLabel, value: rightValue, color: 'var(--series-right)' },
   ]
   const slotW = innerW / 2
 

@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Local ROM analysis database
+server/data/*.db
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
