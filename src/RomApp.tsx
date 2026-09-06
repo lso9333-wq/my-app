@@ -138,7 +138,9 @@ function RomApp() {
       {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
       <video ref={videoRef} muted playsInline hidden={stage === 'idle'} className="rom-preview-video" />
 
-      {stage === 'idle' && <VideoUploader onSelect={handleSelect} />}
+      {stage === 'idle' && (
+        <VideoUploader onSelect={handleSelect} title="스트레칭 처치 전후를 촬영한 동영상을 업로드하세요" />
+      )}
 
       {stage === 'loading-model' && (
         <div className="progress-panel">
