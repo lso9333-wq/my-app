@@ -1,7 +1,7 @@
 import type { XmskRecipe, XmskRegionKey } from '../types/xmsk'
 
 const INTENSITY_NOTE =
-  '강도 조절: 처치 前 신호 → 강도 낮게·순환 위주로 진행한다고 고지 / 처치 後 통증 → 원인(과압·한 곳 집중) 찾아 다음엔 분산 / 방사통·저림 → 즉시 위치 이동·강압 금지'
+  '강도 조절 (전 레시피 공통): 처치 前 신호 → 강도 낮게·순환 위주 고지 / 처치 後 통증 → 강도 비율 불균형, 원인 찾아 분산 / 방사통·저림 → 즉시 위치 이동·강압 금지'
 
 export const XMSK_INTENSITY_NOTE = INTENSITY_NOTE
 
@@ -29,7 +29,7 @@ export const XMSK_RECIPES: XmskRecipe[] = [
       { id: 'armRaise', label: '팔 올리기 (굴곡·외전)', unit: '도', sides: 'lr' },
     ],
     steps: [
-      { step: 'A', title: '후두하 직접 이완', detail: '후두하근(강압 금지·추골동맥)·두판상근·상부승모근(쥐어짜기)' },
+      { step: 'A', title: '후두하 직접 당기는 근육 이완', detail: '후두하근(강압 금지·추골동맥)·두판상근·상부승모근(쥐어짜기)' },
       { step: 'B', title: '약해진 굴곡근 가볍게 순환·활성', detail: 'SCM·사각근 — 강한 신장 아님, 가볍게 늘려 깨움' },
       { step: 'C [필수]', title: '보상 근육 이완', detail: '중·하부승모·견갑거·회전근개·기립근·능형근·소흉근' },
       { step: 'D', title: '길항근 활성 (마무리)', detail: '대흉근 스트레칭 — 후방 근육의 길항근' },
