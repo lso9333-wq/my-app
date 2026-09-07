@@ -74,3 +74,23 @@ export interface XmskSessionRow {
   before_json: string
   after_json: string
 }
+
+export interface XmskEvaluationCreateRequest {
+  traineeName: string
+  evaluatorName?: string
+  evaluationDate: string
+  scores: Record<string, number>
+  requiredPass: Record<string, boolean>
+  comment?: string
+}
+
+export interface XmskEvaluationRow {
+  id: number
+  created_at: string
+  trainee_name: string
+  evaluator_name: string | null
+  evaluation_date: string
+  scores_json: string
+  required_pass_json: string
+  comment: string | null
+}

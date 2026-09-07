@@ -1,7 +1,21 @@
 import { Router, type NextFunction, type Request, type Response } from 'express'
 import { checkPassword, issueToken, verifyToken } from '../xmskAuth.js'
-import { getXmskSession, insertXmskSession, listXmskSessions } from '../db.js'
-import type { XmskMeasurementValue, XmskSessionCreateRequest, XmskSessionRow } from '../types.js'
+import {
+  getXmskEvaluation,
+  getXmskSession,
+  insertXmskEvaluation,
+  insertXmskSession,
+  listXmskEvaluations,
+  listXmskSessions,
+} from '../db.js'
+import { computeXmskEvalVerdict, XMSK_EVAL_REQUIRED_IDS, XMSK_EVAL_SCORE_MAX } from '../xmskEvalDefs.js'
+import type {
+  XmskEvaluationCreateRequest,
+  XmskEvaluationRow,
+  XmskMeasurementValue,
+  XmskSessionCreateRequest,
+  XmskSessionRow,
+} from '../types.js'
 
 export const xmskRouter = Router()
 
@@ -127,5 +141,93 @@ xmskRouter.get('/sessions/:id', requireAuth, (req: Request, res: Response) => {
     before,
     after,
     avgAbsDelta: avgAbsDelta(before, after),
+  })
+})
+
+function validateEvaluationRequest(body: unknown): string | null {
+  if (typeof body !== 'object' || body === null) return '요청 본문이 올바르지 않습니다.'
+  const b = body as Partial<XmskEvaluationCreateRequest>
+
+  if (typeof b.traineeName !== 'string' || b.traineeName.trim() === '') return 'traineeName이 필요합니다.'
+  if (typeof b.evaluationDate !== 'string' || b.evaluationDate.trim() === '') return 'evaluationDate가 필요합니다.'
+  if (b.evaluatorName !== undefined && typeof b.evaluatorName !== 'string') return 'evaluatorName이 올바르지 않습니다.'
+  if (b.comment !== undefined && typeof b.comment !== 'string') return 'comment가 올바르지 않습니다.'
+
+  if (typeof b.scores !== 'object' || b.scores === null) return 'scores가 필요합니다.'
+  for (const [id, max] of Object.entries(XMSK_EVAL_SCORE_MAX)) {
+    const v = (b.scores as Record<string, unknown>)[id]
+    if (!isFiniteNumber(v) || v < 0 || v > max) return `scores.${id}는 0~${max} 사이여야 합니다.`
+  }
+
+  if (typeof b.requiredPass !== 'object' || b.requiredPass === null) return 'requiredPass가 필요합니다.'
+  for (const id of XMSK_EVAL_REQUIRED_IDS) {
+    const v = (b.requiredPass as Record<string, unknown>)[id]
+    if (typeof v !== 'boolean') return `requiredPass.${id}는 boolean이어야 합니다.`
+  }
+
+  return null
+}
+
+function evalTotalScore(scores: Record<string, number>): number {
+  return Object.keys(XMSK_EVAL_SCORE_MAX).reduce((sum, id) => sum + (scores[id] ?? 0), 0)
+}
+
+function evalAllRequiredPassed(requiredPass: Record<string, boolean>): boolean {
+  return XMSK_EVAL_REQUIRED_IDS.every((id) => requiredPass[id] === true)
+}
+
+xmskRouter.post('/evaluations', requireAuth, (req: Request, res: Response) => {
+  const error = validateEvaluationRequest(req.body)
+  if (error) {
+    res.status(400).json({ error })
+    return
+  }
+  const { id, createdAt } = insertXmskEvaluation(req.body as XmskEvaluationCreateRequest)
+  res.status(201).json({ id, createdAt })
+})
+
+xmskRouter.get('/evaluations', requireAuth, (req: Request, res: Response) => {
+  const limitParam = Number(req.query.limit)
+  const limit = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(limitParam, 200) : 50
+
+  const rows = listXmskEvaluations(limit)
+  const evaluations = rows.map((row: XmskEvaluationRow) => {
+    const scores = JSON.parse(row.scores_json) as Record<string, number>
+    const requiredPass = JSON.parse(row.required_pass_json) as Record<string, boolean>
+    const totalScore = evalTotalScore(scores)
+    return {
+      id: row.id,
+      createdAt: row.created_at,
+      traineeName: row.trainee_name,
+      evaluatorName: row.evaluator_name,
+      evaluationDate: row.evaluation_date,
+      totalScore,
+      verdict: computeXmskEvalVerdict(totalScore, evalAllRequiredPassed(requiredPass)),
+    }
+  })
+  res.json({ evaluations })
+})
+
+xmskRouter.get('/evaluations/:id', requireAuth, (req: Request, res: Response) => {
+  const id = Number(req.params.id)
+  const row = Number.isFinite(id) ? getXmskEvaluation(id) : undefined
+  if (!row) {
+    res.status(404).json({ error: '평가를 찾을 수 없습니다' })
+    return
+  }
+  const scores = JSON.parse(row.scores_json) as Record<string, number>
+  const requiredPass = JSON.parse(row.required_pass_json) as Record<string, boolean>
+  const totalScore = evalTotalScore(scores)
+  res.json({
+    id: row.id,
+    createdAt: row.created_at,
+    traineeName: row.trainee_name,
+    evaluatorName: row.evaluator_name,
+    evaluationDate: row.evaluation_date,
+    totalScore,
+    verdict: computeXmskEvalVerdict(totalScore, evalAllRequiredPassed(requiredPass)),
+    scores,
+    requiredPass,
+    comment: row.comment,
   })
 })

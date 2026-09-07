@@ -4,6 +4,8 @@ import path from 'node:path'
 import type {
   RomSessionCreateRequest,
   RomSessionRow,
+  XmskEvaluationCreateRequest,
+  XmskEvaluationRow,
   XmskSessionCreateRequest,
   XmskSessionRow,
 } from './types.js'
@@ -119,4 +121,58 @@ export function listXmskSessions(limit: number): XmskSessionRow[] {
 
 export function getXmskSession(id: number): XmskSessionRow | undefined {
   return getXmskStmt.get(id) as unknown as XmskSessionRow | undefined
+}
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS xmsk_evaluations (
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    created_at          TEXT NOT NULL,
+    trainee_name        TEXT NOT NULL,
+    evaluator_name      TEXT,
+    evaluation_date     TEXT NOT NULL,
+    scores_json         TEXT NOT NULL,
+    required_pass_json  TEXT NOT NULL,
+    comment             TEXT
+  )
+`)
+
+const insertXmskEvalStmt = db.prepare(`
+  INSERT INTO xmsk_evaluations
+    (created_at, trainee_name, evaluator_name, evaluation_date, scores_json, required_pass_json, comment)
+  VALUES (?, ?, ?, ?, ?, ?, ?)
+`)
+
+const listXmskEvalStmt = db.prepare(`
+  SELECT id, created_at, trainee_name, evaluator_name, evaluation_date, scores_json, required_pass_json, comment
+  FROM xmsk_evaluations
+  ORDER BY id DESC
+  LIMIT ?
+`)
+
+const getXmskEvalStmt = db.prepare(`
+  SELECT id, created_at, trainee_name, evaluator_name, evaluation_date, scores_json, required_pass_json, comment
+  FROM xmsk_evaluations
+  WHERE id = ?
+`)
+
+export function insertXmskEvaluation(req: XmskEvaluationCreateRequest): { id: number; createdAt: string } {
+  const createdAt = new Date().toISOString()
+  const result = insertXmskEvalStmt.run(
+    createdAt,
+    req.traineeName,
+    req.evaluatorName ?? null,
+    req.evaluationDate,
+    JSON.stringify(req.scores),
+    JSON.stringify(req.requiredPass),
+    req.comment ?? null,
+  )
+  return { id: Number(result.lastInsertRowid), createdAt }
+}
+
+export function listXmskEvaluations(limit: number): XmskEvaluationRow[] {
+  return listXmskEvalStmt.all(limit) as unknown as XmskEvaluationRow[]
+}
+
+export function getXmskEvaluation(id: number): XmskEvaluationRow | undefined {
+  return getXmskEvalStmt.get(id) as unknown as XmskEvaluationRow | undefined
 }

@@ -1,5 +1,9 @@
 import type {
   XmskAuthResponse,
+  XmskEvaluationCreateRequest,
+  XmskEvaluationCreateResponse,
+  XmskEvaluationDetail,
+  XmskEvaluationListItem,
   XmskSessionCreateRequest,
   XmskSessionCreateResponse,
   XmskSessionDetail,
@@ -53,5 +57,28 @@ export async function listXmskSessions(token: string, limit = 50): Promise<XmskS
 
 export async function getXmskSession(token: string, id: number): Promise<XmskSessionDetail> {
   const res = await fetch(`${BASE}/sessions/${id}`, { headers: authHeaders(token) })
+  return parseOrThrow(res)
+}
+
+export async function createXmskEvaluation(
+  token: string,
+  req: XmskEvaluationCreateRequest,
+): Promise<XmskEvaluationCreateResponse> {
+  const res = await fetch(`${BASE}/evaluations`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(req),
+  })
+  return parseOrThrow(res)
+}
+
+export async function listXmskEvaluations(token: string, limit = 50): Promise<XmskEvaluationListItem[]> {
+  const res = await fetch(`${BASE}/evaluations?limit=${limit}`, { headers: authHeaders(token) })
+  const data = await parseOrThrow<{ evaluations: XmskEvaluationListItem[] }>(res)
+  return data.evaluations
+}
+
+export async function getXmskEvaluation(token: string, id: number): Promise<XmskEvaluationDetail> {
+  const res = await fetch(`${BASE}/evaluations/${id}`, { headers: authHeaders(token) })
   return parseOrThrow(res)
 }
