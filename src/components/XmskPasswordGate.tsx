@@ -30,7 +30,7 @@ export function XmskPasswordGate({ onUnlock }: Props) {
         🔒
       </p>
       <p className="xmsk-gate-title">XMSK는 트레이너 전용 도구입니다</p>
-      <p className="app-subtitle">비밀번호를 입력하면 통증 레시피 가이드를 사용할 수 있습니다.</p>
+      <p className="app-subtitle">비밀번호를 입력하면 통증 레시피 · 근육 사전 · 평가표를 사용할 수 있습니다.</p>
       <form onSubmit={handleSubmit} className="xmsk-gate-form">
         <input
           type="password"

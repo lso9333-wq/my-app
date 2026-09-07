@@ -32,6 +32,7 @@ export function XmskMuscleDictionary() {
         ))}
       </div>
 
+      <p className="xmsk-note">근육 이름을 누르면 붙는 곳·작용과 STRETCH·RELEASE 기법이 펼쳐집니다.</p>
       {group.safetyNote && <p className="xmsk-note xmsk-dict-safety">⚠️ {group.safetyNote}</p>}
 
       <ul className="xmsk-dict-list">

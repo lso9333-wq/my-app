@@ -10,6 +10,12 @@ import type { XmskModule, XmskRegionKey } from './types/xmsk'
 
 const TOKEN_STORAGE_KEY = 'xmsk_token'
 
+const MODULE_DESCRIPTIONS: Record<XmskModule, string> = {
+  recipes: '부위를 선택하면 Red Flag 확인부터 Before/After 비교까지 순서대로 안내합니다.',
+  dictionary: '부위를 고르고 근육을 눌러 붙는 곳·작용, 스트레칭·근막이완 방법을 확인하세요.',
+  evaluation: '이론·실기·안전·CS 항목을 채점하면 합계와 투입 판정(승인/재평가/보류)을 자동으로 계산합니다.',
+}
+
 function XmskApp() {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_STORAGE_KEY))
   const [xmskModule, setXmskModule] = useState<XmskModule>('recipes')
@@ -33,7 +39,7 @@ function XmskApp() {
   return (
     <div className="xmsk-app">
       <div className="xmsk-toolbar">
-        <p className="app-subtitle">FORéSTRETCH 트레이너 전용 도구 — 통증 레시피 · 근육 사전 · 현장투입 평가표</p>
+        <p className="app-subtitle">FORéSTRETCH 트레이너 전용 도구</p>
         <button type="button" onClick={handleLock}>
           잠그기
         </button>
@@ -63,6 +69,7 @@ function XmskApp() {
           평가표
         </button>
       </nav>
+      <p className="app-subtitle xmsk-module-desc">{MODULE_DESCRIPTIONS[xmskModule]}</p>
 
       {xmskModule === 'recipes' && (
         <>

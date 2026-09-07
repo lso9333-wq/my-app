@@ -843,6 +843,10 @@ button:disabled {
   padding-bottom: 12px;
 }
 
+.xmsk-module-desc {
+  margin-top: -4px;
+}
+
 .xmsk-dict {
   display: flex;
   flex-direction: column;
