@@ -11,7 +11,7 @@ function App() {
   return (
     <div className="app-shell">
       <header className="app-header">
-        <h1>{tab === 'gait' ? '보행 분석' : '스트레칭 가동범위 분석'}</h1>
+        <h1>MyDdctor</h1>
         <nav className="app-tabs">
           <button
             type="button"
