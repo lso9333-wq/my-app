@@ -1,7 +1,12 @@
 import { DatabaseSync } from 'node:sqlite'
 import { mkdirSync } from 'node:fs'
 import path from 'node:path'
-import type { RomSessionCreateRequest, RomSessionRow } from './types.js'
+import type {
+  RomSessionCreateRequest,
+  RomSessionRow,
+  XmskSessionCreateRequest,
+  XmskSessionRow,
+} from './types.js'
 
 const DATA_DIR = path.resolve(import.meta.dirname, 'data')
 const DB_PATH = path.join(DATA_DIR, 'rom.db')
@@ -62,4 +67,56 @@ export function listSessions(limit: number): RomSessionRow[] {
 
 export function getSession(id: number): RomSessionRow | undefined {
   return getStmt.get(id) as unknown as RomSessionRow | undefined
+}
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS xmsk_sessions (
+    id                INTEGER PRIMARY KEY AUTOINCREMENT,
+    created_at        TEXT NOT NULL,
+    region            TEXT NOT NULL,
+    red_flags_cleared INTEGER NOT NULL,
+    note              TEXT,
+    before_json       TEXT NOT NULL,
+    after_json        TEXT NOT NULL
+  )
+`)
+
+const insertXmskStmt = db.prepare(`
+  INSERT INTO xmsk_sessions
+    (created_at, region, red_flags_cleared, note, before_json, after_json)
+  VALUES (?, ?, ?, ?, ?, ?)
+`)
+
+const listXmskStmt = db.prepare(`
+  SELECT id, created_at, region, red_flags_cleared, note, before_json, after_json
+  FROM xmsk_sessions
+  ORDER BY id DESC
+  LIMIT ?
+`)
+
+const getXmskStmt = db.prepare(`
+  SELECT id, created_at, region, red_flags_cleared, note, before_json, after_json
+  FROM xmsk_sessions
+  WHERE id = ?
+`)
+
+export function insertXmskSession(req: XmskSessionCreateRequest): { id: number; createdAt: string } {
+  const createdAt = new Date().toISOString()
+  const result = insertXmskStmt.run(
+    createdAt,
+    req.region,
+    req.redFlagsCleared ? 1 : 0,
+    req.note ?? null,
+    JSON.stringify(req.before),
+    JSON.stringify(req.after),
+  )
+  return { id: Number(result.lastInsertRowid), createdAt }
+}
+
+export function listXmskSessions(limit: number): XmskSessionRow[] {
+  return listXmskStmt.all(limit) as unknown as XmskSessionRow[]
+}
+
+export function getXmskSession(id: number): XmskSessionRow | undefined {
+  return getXmskStmt.get(id) as unknown as XmskSessionRow | undefined
 }

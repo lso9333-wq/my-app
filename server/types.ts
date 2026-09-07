@@ -39,3 +39,38 @@ export interface RomSessionRow {
   after_end_sec: number
   results_json: string
 }
+
+export type XmskRegionKey =
+  | 'neckShoulder'
+  | 'lowBack'
+  | 'knee'
+  | 'ankle'
+  | 'hip'
+  | 'elbow'
+  | 'wrist'
+  | 'upperBack'
+
+export interface XmskMeasurementValue {
+  id: string
+  value?: number
+  left?: number
+  right?: number
+}
+
+export interface XmskSessionCreateRequest {
+  region: XmskRegionKey
+  redFlagsCleared: boolean
+  note?: string
+  before: XmskMeasurementValue[]
+  after: XmskMeasurementValue[]
+}
+
+export interface XmskSessionRow {
+  id: number
+  created_at: string
+  region: string
+  red_flags_cleared: number
+  note: string | null
+  before_json: string
+  after_json: string
+}
