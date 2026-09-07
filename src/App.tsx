@@ -11,7 +11,7 @@ function App() {
   return (
     <div className="app-shell">
       <header className="app-header">
-        <h1>MyDdctor</h1>
+        <h1>MyDoctor</h1>
         <nav className="app-tabs">
           <button
             type="button"
