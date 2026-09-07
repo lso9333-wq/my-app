@@ -123,6 +123,12 @@ export function getXmskSession(id: number): XmskSessionRow | undefined {
   return getXmskStmt.get(id) as unknown as XmskSessionRow | undefined
 }
 
+const deleteXmskStmt = db.prepare(`DELETE FROM xmsk_sessions WHERE id = ?`)
+
+export function deleteXmskSession(id: number): boolean {
+  return deleteXmskStmt.run(id).changes > 0
+}
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS xmsk_evaluations (
     id                  INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -175,4 +181,10 @@ export function listXmskEvaluations(limit: number): XmskEvaluationRow[] {
 
 export function getXmskEvaluation(id: number): XmskEvaluationRow | undefined {
   return getXmskEvalStmt.get(id) as unknown as XmskEvaluationRow | undefined
+}
+
+const deleteXmskEvalStmt = db.prepare(`DELETE FROM xmsk_evaluations WHERE id = ?`)
+
+export function deleteXmskEvaluation(id: number): boolean {
+  return deleteXmskEvalStmt.run(id).changes > 0
 }

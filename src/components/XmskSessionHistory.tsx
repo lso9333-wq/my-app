@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { XmskSessionDetail, XmskSessionListItem } from '../types/xmsk'
-import { getXmskSession, listXmskSessions, XmskAuthError } from '../lib/xmskApi'
+import { deleteXmskSession, getXmskSession, listXmskSessions, XmskAuthError } from '../lib/xmskApi'
 import { XMSK_RECIPE_MAP } from '../lib/xmskRecipes'
 
 interface Props {
@@ -42,6 +42,21 @@ export function XmskSessionHistory({ token, refreshKey, onAuthError }: Props) {
     }
   }
 
+  const handleDelete = async (id: number) => {
+    if (!window.confirm('이 세션 기록을 삭제할까요? 되돌릴 수 없습니다.')) return
+    try {
+      await deleteXmskSession(token, id)
+      setSessions((prev) => prev.filter((s) => s.id !== id))
+      setDetail((prev) => (prev?.id === id ? null : prev))
+    } catch (err) {
+      if (err instanceof XmskAuthError) {
+        onAuthError()
+        return
+      }
+      setError(err instanceof Error ? err.message : '삭제하지 못했습니다.')
+    }
+  }
+
   if (error) return <p className="error-panel">{error}</p>
   if (sessions.length === 0) return <p className="rom-history-empty">저장된 기록이 없습니다.</p>
 
@@ -50,12 +65,15 @@ export function XmskSessionHistory({ token, refreshKey, onAuthError }: Props) {
       <h3>저장된 세션 기록</h3>
       <ul className="rom-history-list">
         {sessions.map((s) => (
-          <li key={s.id}>
-            <button type="button" onClick={() => openDetail(s.id)}>
+          <li key={s.id} className="rom-history-row">
+            <button type="button" className="rom-history-row-main" onClick={() => openDetail(s.id)}>
               {new Date(s.createdAt).toLocaleString('ko-KR')} · {XMSK_RECIPE_MAP[s.region].title}
               {s.avgAbsDelta !== null && (
                 <span className="rom-history-delta"> · 평균 변화 폭 {s.avgAbsDelta.toFixed(1)}</span>
               )}
+            </button>
+            <button type="button" className="rom-history-delete" onClick={() => handleDelete(s.id)}>
+              삭제
             </button>
           </li>
         ))}

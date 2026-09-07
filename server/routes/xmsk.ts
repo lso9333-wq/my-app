@@ -1,6 +1,8 @@
 import { Router, type NextFunction, type Request, type Response } from 'express'
 import { checkPassword, issueToken, verifyToken } from '../xmskAuth.js'
 import {
+  deleteXmskEvaluation,
+  deleteXmskSession,
   getXmskEvaluation,
   getXmskSession,
   insertXmskEvaluation,
@@ -144,6 +146,15 @@ xmskRouter.get('/sessions/:id', requireAuth, (req: Request, res: Response) => {
   })
 })
 
+xmskRouter.delete('/sessions/:id', requireAuth, (req: Request, res: Response) => {
+  const id = Number(req.params.id)
+  if (!Number.isFinite(id) || !deleteXmskSession(id)) {
+    res.status(404).json({ error: '세션을 찾을 수 없습니다' })
+    return
+  }
+  res.status(204).end()
+})
+
 function validateEvaluationRequest(body: unknown): string | null {
   if (typeof body !== 'object' || body === null) return '요청 본문이 올바르지 않습니다.'
   const b = body as Partial<XmskEvaluationCreateRequest>
@@ -230,4 +241,13 @@ xmskRouter.get('/evaluations/:id', requireAuth, (req: Request, res: Response) =>
     requiredPass,
     comment: row.comment,
   })
+})
+
+xmskRouter.delete('/evaluations/:id', requireAuth, (req: Request, res: Response) => {
+  const id = Number(req.params.id)
+  if (!Number.isFinite(id) || !deleteXmskEvaluation(id)) {
+    res.status(404).json({ error: '평가를 찾을 수 없습니다' })
+    return
+  }
+  res.status(204).end()
 })

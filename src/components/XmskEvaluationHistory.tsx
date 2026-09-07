@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { XmskEvaluationDetail, XmskEvaluationListItem } from '../types/xmsk'
-import { getXmskEvaluation, listXmskEvaluations, XmskAuthError } from '../lib/xmskApi'
+import { deleteXmskEvaluation, getXmskEvaluation, listXmskEvaluations, XmskAuthError } from '../lib/xmskApi'
 import { XMSK_EVAL_SECTIONS, XMSK_EVAL_VERDICT_LABEL } from '../lib/xmskEvaluation'
 
 interface Props {
@@ -38,6 +38,21 @@ export function XmskEvaluationHistory({ token, refreshKey, onAuthError }: Props)
     }
   }
 
+  const handleDelete = async (id: number) => {
+    if (!window.confirm('이 평가 기록을 삭제할까요? 되돌릴 수 없습니다.')) return
+    try {
+      await deleteXmskEvaluation(token, id)
+      setEvaluations((prev) => prev.filter((e) => e.id !== id))
+      setDetail((prev) => (prev?.id === id ? null : prev))
+    } catch (err) {
+      if (err instanceof XmskAuthError) {
+        onAuthError()
+        return
+      }
+      setError(err instanceof Error ? err.message : '삭제하지 못했습니다.')
+    }
+  }
+
   if (error) return <p className="error-panel">{error}</p>
   if (evaluations.length === 0) return <p className="rom-history-empty">저장된 평가 기록이 없습니다.</p>
 
@@ -46,13 +61,16 @@ export function XmskEvaluationHistory({ token, refreshKey, onAuthError }: Props)
       <h3>저장된 평가 기록</h3>
       <ul className="rom-history-list">
         {evaluations.map((e) => (
-          <li key={e.id}>
-            <button type="button" onClick={() => openDetail(e.id)}>
+          <li key={e.id} className="rom-history-row">
+            <button type="button" className="rom-history-row-main" onClick={() => openDetail(e.id)}>
               {e.evaluationDate} · {e.traineeName}
               <span className="rom-history-delta">
                 {' '}
                 · {e.totalScore}/100점 · {XMSK_EVAL_VERDICT_LABEL[e.verdict]}
               </span>
+            </button>
+            <button type="button" className="rom-history-delete" onClick={() => handleDelete(e.id)}>
+              삭제
             </button>
           </li>
         ))}

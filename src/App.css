@@ -542,11 +542,31 @@ button:disabled {
   gap: 6px;
 }
 
-.rom-history-list button {
+.rom-history-row {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.rom-history-row-main {
+  flex: 1;
   width: 100%;
   text-align: left;
   background: var(--surface-2);
   font-size: 13px;
+}
+
+.rom-history-delete {
+  flex-shrink: 0;
+  font-size: 12px;
+  padding: 6px 12px;
+  color: #e88a89;
+  border-color: #e88a89;
+  background: transparent;
+}
+
+.rom-history-delete:hover {
+  background: var(--surface-2);
 }
 
 .rom-history-delta {

@@ -23,6 +23,14 @@ async function parseOrThrow<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>
 }
 
+async function expectNoContent(res: Response): Promise<void> {
+  if (res.status === 401) throw new XmskAuthError('인증이 만료되었습니다. 다시 잠금 해제해 주세요.')
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new Error(body?.error ?? `요청이 실패했습니다 (${res.status})`)
+  }
+}
+
 function authHeaders(token: string): HeadersInit {
   return { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
 }
@@ -60,6 +68,11 @@ export async function getXmskSession(token: string, id: number): Promise<XmskSes
   return parseOrThrow(res)
 }
 
+export async function deleteXmskSession(token: string, id: number): Promise<void> {
+  const res = await fetch(`${BASE}/sessions/${id}`, { method: 'DELETE', headers: authHeaders(token) })
+  return expectNoContent(res)
+}
+
 export async function createXmskEvaluation(
   token: string,
   req: XmskEvaluationCreateRequest,
@@ -81,4 +94,9 @@ export async function listXmskEvaluations(token: string, limit = 50): Promise<Xm
 export async function getXmskEvaluation(token: string, id: number): Promise<XmskEvaluationDetail> {
   const res = await fetch(`${BASE}/evaluations/${id}`, { headers: authHeaders(token) })
   return parseOrThrow(res)
+}
+
+export async function deleteXmskEvaluation(token: string, id: number): Promise<void> {
+  const res = await fetch(`${BASE}/evaluations/${id}`, { method: 'DELETE', headers: authHeaders(token) })
+  return expectNoContent(res)
 }
