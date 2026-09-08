@@ -85,3 +85,7 @@ TypeScript project references: root `tsconfig.json` → `tsconfig.app.json` (`sr
 Linting is via Oxlint (`.oxlintrc.json`), not ESLint — rules currently enabled: `react/rules-of-hooks`, `react/only-export-components`. Oxlint also covers `server/`.
 
 All three features are reference/aid tools only, not medical diagnostics — stated in each feature's UI, and should stay true of any feature added.
+
+### Deployment
+
+`Dockerfile` (multi-stage: `npm ci && npm run build` then a slim runtime image) + `docker-compose.yml` for running it. `docker-compose.yml` binds `./data` on the host to `/app/server/data` in the container (where `server/db.ts` puts `rom.db`) so the SQLite file survives container rebuilds/recreation and — since it's just a directory — can be copied wholesale to a different host (Google Cloud, AWS, another PC, …) when migrating; `.env.production` (gitignored, not committed) supplies `XMSK_PASSWORD`/`XMSK_SECRET`. Typical run: `docker compose up -d --build`. The container listens on `PORT` (`ENV PORT=8080` in the Dockerfile, matching `EXPOSE 8080`); whatever host firewall sits in front of it must allow that port in.

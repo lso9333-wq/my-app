@@ -1,0 +1,11 @@
+services:
+  my-app:
+    build: .
+    image: my-app
+    ports:
+      - '8080:8080'
+    env_file:
+      - .env.production
+    volumes:
+      - ./data:/app/server/data
+    restart: unless-stopped

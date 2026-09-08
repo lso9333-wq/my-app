@@ -16,6 +16,9 @@ dist-ssr
 # Local ROM analysis database
 server/data/*.db
 
+# docker-compose bind-mounted DB volume (see docker-compose.yml)
+/data
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

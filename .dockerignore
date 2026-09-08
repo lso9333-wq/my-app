@@ -6,3 +6,4 @@ server/data
 *.md
 .env
 .env.*
+/data
