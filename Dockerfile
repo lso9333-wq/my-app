@@ -8,6 +8,7 @@ RUN npm run build
 FROM node:24-slim
 WORKDIR /app
 ENV NODE_ENV=production
+ENV PORT=8080
 COPY package*.json ./
 RUN npm ci
 COPY --from=build /app/dist ./dist
