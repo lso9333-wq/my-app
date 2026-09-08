@@ -22,15 +22,16 @@ There is no test runner configured in this project.
 
 ## Architecture
 
-Vite + React 19 + TypeScript SPA with a minimal Express + SQLite backend. Two independent features share one shell:
+Vite + React 19 + TypeScript SPA with a minimal Express + SQLite backend. Three features share one shell:
 
 1. **보행 분석 (gait analysis)** — analyzes a walking video entirely client-side.
 2. **스트레칭 가동범위 분석 (stretch ROM analysis)** — analyzes one video where the user marks a "before" and "after" stretching segment, and computes joint range-of-motion change. Only the *computed numeric results* are sent to the backend for storage — raw video and per-frame pose data never leave the browser, in both features.
+3. **XMSK** — a password-gated, trainer-only reference tool (pain-relief "recipes", a muscle dictionary, and a trainer skills evaluation form). Unrelated to the pose pipeline; entirely server-backed.
 
 ### Frontend
 
 - `src/main.tsx` — entry point, mounts `App` into `#root`
-- `src/App.tsx` — thin shell: header + tab switch between `GaitApp` and `RomApp`
+- `src/App.tsx` — thin shell: header + tab switch between `GaitApp`, `RomApp`, and `XmskApp`
 - `src/App.css` / `src/index.css` — styling (shared design tokens in `index.css` `:root`)
 
 **Shared pose pipeline** (`src/lib/poseDetector.ts`): a singleton MoveNet SinglePose Thunder detector (webgl backend). `extractPoseFrames(video, opts)` seeks a `<video>` element frame-by-frame at `opts.samplingFps` starting at `opts.startTimeSec` (default 0) for up to `opts.maxDurationSec`, running pose estimation per frame (deterministic since it's not realtime playback — used by both features, with different time windows). Also exports `POSE_CONNECTIONS` (skeleton edge list) used by `SkeletonViewer`.
@@ -57,18 +58,30 @@ Vite + React 19 + TypeScript SPA with a minimal Express + SQLite backend. Two in
 - `src/components/RomResultsPanel.tsx` — per-joint before/after/delta table + reused `ComparisonBarChart`.
 - `src/components/RomSessionHistory.tsx` — lists saved sessions from the backend, click to view detail.
 
+**XMSK** (`src/XmskApp.tsx`):
+- Not built on the shared pose pipeline — no video/pose involved at all. Gated by a password prompt (`XmskPasswordGate`); the resulting bearer token is cached in `localStorage` (`xmsk_token`) and attached to every API call, and any `401` response (via `XmskAuthError`, thrown from `src/lib/xmskApi.ts`) re-locks the app.
+- Once unlocked, a second-level tab switch (`XmskModule`: `recipes` | `dictionary` | `evaluation`) picks the module:
+  - **통증 레시피 (recipes)** — `XmskRegionPicker` picks one of 8 `XmskRegionKey`s (neck/shoulder, low back, knee, ankle, hip, elbow, wrist, upper back), then `XmskRecipeFlow` walks a fixed stage sequence (`XmskFlowStage`: `redflag → before → recipe → after → summary`) driven by static per-region content in `src/lib/xmskRecipes.ts` (`XMSK_RECIPE_MAP`) — Red Flag checklist, before/after manual measurement inputs, ordered steps, closing script. On save it posts before/after measurements to `/api/xmsk/sessions`; `XmskSessionHistory` lists past sessions and reuses `ComparisonBarChart`.
+  - **근육 사전 (dictionary)** — `XmskMuscleDictionary` is a pure static reference browser over `src/lib/xmskMuscles.ts` (origin/insertion, action, stretch cue with common error responses, and manual release technique per muscle, grouped by region). No backend calls.
+  - **평가표 (evaluation)** — `XmskEvaluationForm` scores a trainee against fixed sections/items defined in `src/lib/xmskEvaluation.ts` (`XMSK_EVAL_SECTIONS`: theory/practical/safety/CS, each with scored items and pass/fail required items) and computes a verdict client-side (`computeXmskEvalVerdict`: `hold` if any required item fails, else `approved` ≥70, `retry` 60–69, else `hold`) before posting to `/api/xmsk/evaluations`; `XmskEvaluationHistory` lists past evaluations. The scoring weights/thresholds are duplicated on the server (`server/xmskEvalDefs.ts`) since the server recomputes the verdict rather than trusting the client's.
+- `src/types/xmsk.ts` — all XMSK request/response and domain types (`XmskRecipe`, `XmskMuscle`, `XmskEvalSection`, session/evaluation create+list+detail shapes, etc).
+- `src/lib/xmskApi.ts` — fetch wrappers for `/api/xmsk/*`, attaching the bearer token and normalizing `401` into `XmskAuthError`.
+
 ### Backend (`server/`)
 
 Minimal Express server, separate from the frontend's `tsconfig.app.json`/build (its own `server/tsconfig.json`, checked via `npm run typecheck:server`, not part of `npm run build`).
 
-- `server/index.ts` — Express app; mounts `/api/rom-sessions`; also serves `dist/` static + SPA fallback (so `npm run build && npm run start` runs frontend + API from one process).
-- `server/db.ts` — `node:sqlite`'s `DatabaseSync` opens `server/data/rom.db` (gitignored; directory kept via `server/data/.gitkeep`), creates the `stretch_sessions` table on startup. No native dependency — relies on Node's built-in SQLite (requires a recent Node; confirmed working on v24).
+- `server/index.ts` — Express app; mounts `/api/rom-sessions` and `/api/xmsk`; also serves `dist/` static + SPA fallback (so `npm run build && npm run start` runs frontend + API from one process).
+- `server/db.ts` — `node:sqlite`'s `DatabaseSync` opens `server/data/rom.db` (gitignored; directory kept via `server/data/.gitkeep`), creates the `stretch_sessions`, `xmsk_sessions`, and `xmsk_evaluations` tables on startup. No native dependency — relies on Node's built-in SQLite (requires a recent Node; confirmed working on v24).
 - `server/routes/romSessions.ts` — `POST /api/rom-sessions`, `GET /api/rom-sessions?limit=`, `GET /api/rom-sessions/:id`, with hand-rolled request validation.
-- `server/types.ts` — request/response shapes, intentionally duplicated (not imported) from `src/types/rom.ts` since the two `tsconfig`s use different `moduleResolution`.
+- `server/routes/xmsk.ts` — `POST /api/xmsk/auth` (password → bearer token); `POST/GET /api/xmsk/sessions`, `GET/DELETE /api/xmsk/sessions/:id`; `POST/GET /api/xmsk/evaluations`, `GET/DELETE /api/xmsk/evaluations/:id`. Every route but `/auth` runs through a `requireAuth` middleware that verifies the `Authorization: Bearer` token. Evaluation verdicts are recomputed server-side from `xmskEvalDefs.ts`, never trusted from the request body.
+- `server/xmskAuth.ts` — single shared password (`XMSK_PASSWORD` env var, dev fallback `forestretch1`) checked with `timingSafeEqual`; issues a signed, self-contained token (`base64url(JSON{exp}).HMAC-SHA256`, 12h TTL, secret from `XMSK_SECRET` env var) — no session store, no per-user identity.
+- `server/xmskEvalDefs.ts` — server-side mirror of the evaluation scoring weights/thresholds and `computeXmskEvalVerdict`, kept in sync by hand with `src/lib/xmskEvaluation.ts`.
+- `server/types.ts` — request/response shapes, intentionally duplicated (not imported) from `src/types/rom.ts` and `src/types/xmsk.ts` since the two `tsconfig`s use different `moduleResolution`.
 - In dev, Vite proxies `/api/*` to `http://localhost:3001` (`vite.config.ts` `server.proxy`) so the two processes need no CORS setup.
 
 TypeScript project references: root `tsconfig.json` → `tsconfig.app.json` (`src/`) + `tsconfig.node.json` (`vite.config.ts` only). `server/tsconfig.json` is standalone, not referenced from the root — `npm run build` never touches `server/`.
 
 Linting is via Oxlint (`.oxlintrc.json`), not ESLint — rules currently enabled: `react/rules-of-hooks`, `react/only-export-components`. Oxlint also covers `server/`.
 
-Both features are reference/aid tools only, not medical diagnostics — stated in each feature's UI, and should stay true of any feature added.
+All three features are reference/aid tools only, not medical diagnostics — stated in each feature's UI, and should stay true of any feature added.
