@@ -19,7 +19,8 @@
     "@tensorflow/tfjs-backend-webgl": "^4.22.0",
     "express": "^5.2.1",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "tsx": "^4.23.13"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
@@ -29,7 +30,6 @@
     "@vitejs/plugin-react": "^6.1.0",
     "concurrently": "^10.0.5",
     "oxlint": "^1.79.0",
-    "tsx": "^4.23.13",
     "typescript": "~6.0.2",
     "vite": "^8.2.2"
   }
