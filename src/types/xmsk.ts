@@ -53,6 +53,8 @@ export interface XmskAuthResponse {
 
 export interface XmskSessionCreateRequest {
   region: XmskRegionKey
+  clientName: string
+  trainerName?: string
   redFlagsCleared: boolean
   note?: string
   before: XmskMeasurementValue[]
@@ -68,6 +70,8 @@ export interface XmskSessionListItem {
   id: number
   createdAt: string
   region: XmskRegionKey
+  clientName: string
+  trainerName: string | null
   note: string | null
   avgAbsDelta: number | null
 }

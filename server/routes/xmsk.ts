@@ -51,6 +51,8 @@ function validateCreateRequest(body: unknown): string | null {
   const b = body as Partial<XmskSessionCreateRequest>
 
   if (typeof b.region !== 'string' || !VALID_REGIONS.has(b.region)) return 'region이 올바르지 않습니다.'
+  if (typeof b.clientName !== 'string' || b.clientName.trim() === '') return 'clientName이 필요합니다.'
+  if (b.trainerName !== undefined && typeof b.trainerName !== 'string') return 'trainerName이 올바르지 않습니다.'
   if (!Array.isArray(b.before) || b.before.some((v) => !isMeasurementValue(v))) {
     return 'before 측정값이 올바르지 않습니다.'
   }
@@ -118,6 +120,8 @@ xmskRouter.get('/sessions', requireAuth, (req: Request, res: Response) => {
       id: row.id,
       createdAt: row.created_at,
       region: row.region,
+      clientName: row.client_name,
+      trainerName: row.trainer_name,
       note: row.note,
       avgAbsDelta: avgAbsDelta(before, after),
     }
@@ -138,6 +142,8 @@ xmskRouter.get('/sessions/:id', requireAuth, (req: Request, res: Response) => {
     id: row.id,
     createdAt: row.created_at,
     region: row.region,
+    clientName: row.client_name,
+    trainerName: row.trainer_name,
     note: row.note,
     redFlagsCleared: !!row.red_flags_cleared,
     before,

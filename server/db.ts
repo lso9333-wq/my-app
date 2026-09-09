@@ -17,6 +17,13 @@ mkdirSync(DATA_DIR, { recursive: true })
 
 const db = new DatabaseSync(DB_PATH)
 
+function ensureColumn(table: string, column: string, ddl: string): void {
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[]
+  if (!cols.some((c) => c.name === column)) {
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${ddl}`)
+  }
+}
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS stretch_sessions (
     id                INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -82,22 +89,24 @@ db.exec(`
     after_json        TEXT NOT NULL
   )
 `)
+ensureColumn('xmsk_sessions', 'client_name', `client_name TEXT NOT NULL DEFAULT ''`)
+ensureColumn('xmsk_sessions', 'trainer_name', `trainer_name TEXT`)
 
 const insertXmskStmt = db.prepare(`
   INSERT INTO xmsk_sessions
-    (created_at, region, red_flags_cleared, note, before_json, after_json)
-  VALUES (?, ?, ?, ?, ?, ?)
+    (created_at, region, client_name, trainer_name, red_flags_cleared, note, before_json, after_json)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 `)
 
 const listXmskStmt = db.prepare(`
-  SELECT id, created_at, region, red_flags_cleared, note, before_json, after_json
+  SELECT id, created_at, region, client_name, trainer_name, red_flags_cleared, note, before_json, after_json
   FROM xmsk_sessions
   ORDER BY id DESC
   LIMIT ?
 `)
 
 const getXmskStmt = db.prepare(`
-  SELECT id, created_at, region, red_flags_cleared, note, before_json, after_json
+  SELECT id, created_at, region, client_name, trainer_name, red_flags_cleared, note, before_json, after_json
   FROM xmsk_sessions
   WHERE id = ?
 `)
@@ -107,6 +116,8 @@ export function insertXmskSession(req: XmskSessionCreateRequest): { id: number; 
   const result = insertXmskStmt.run(
     createdAt,
     req.region,
+    req.clientName,
+    req.trainerName ?? null,
     req.redFlagsCleared ? 1 : 0,
     req.note ?? null,
     JSON.stringify(req.before),

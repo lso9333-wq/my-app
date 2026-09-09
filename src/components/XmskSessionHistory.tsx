@@ -67,7 +67,7 @@ export function XmskSessionHistory({ token, refreshKey, onAuthError }: Props) {
         {sessions.map((s) => (
           <li key={s.id} className="rom-history-row">
             <button type="button" className="rom-history-row-main" onClick={() => openDetail(s.id)}>
-              {new Date(s.createdAt).toLocaleString('ko-KR')} · {XMSK_RECIPE_MAP[s.region].title}
+              {new Date(s.createdAt).toLocaleString('ko-KR')} · {XMSK_RECIPE_MAP[s.region].title} · {s.clientName}
               {s.avgAbsDelta !== null && (
                 <span className="rom-history-delta"> · 평균 변화 폭 {s.avgAbsDelta.toFixed(1)}</span>
               )}
@@ -82,7 +82,8 @@ export function XmskSessionHistory({ token, refreshKey, onAuthError }: Props) {
       {detail && (
         <div className="rom-history-detail">
           <h4>
-            {new Date(detail.createdAt).toLocaleString('ko-KR')} · {XMSK_RECIPE_MAP[detail.region].title}
+            {new Date(detail.createdAt).toLocaleString('ko-KR')} · {XMSK_RECIPE_MAP[detail.region].title} · {detail.clientName}
+            {detail.trainerName && <span className="xmsk-unit"> (담당: {detail.trainerName})</span>}
           </h4>
           {detail.note && <p className="app-subtitle">메모: {detail.note}</p>}
           <table className="rom-table">

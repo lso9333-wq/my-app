@@ -59,6 +59,8 @@ export interface XmskMeasurementValue {
 
 export interface XmskSessionCreateRequest {
   region: XmskRegionKey
+  clientName: string
+  trainerName?: string
   redFlagsCleared: boolean
   note?: string
   before: XmskMeasurementValue[]
@@ -69,6 +71,8 @@ export interface XmskSessionRow {
   id: number
   created_at: string
   region: string
+  client_name: string
+  trainer_name: string | null
   red_flags_cleared: number
   note: string | null
   before_json: string

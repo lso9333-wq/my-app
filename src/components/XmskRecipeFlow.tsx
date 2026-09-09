@@ -27,6 +27,8 @@ interface Props {
 export function XmskRecipeFlow({ region, token, onExit, onSaved, onAuthError }: Props) {
   const recipe = XMSK_RECIPE_MAP[region]
   const [stage, setStage] = useState<XmskFlowStage>('redflag')
+  const [clientName, setClientName] = useState('')
+  const [trainerName, setTrainerName] = useState('')
   const [redFlagsCleared, setRedFlagsCleared] = useState(false)
   const [before, setBefore] = useState<MeasureState>({})
   const [after, setAfter] = useState<MeasureState>({})
@@ -57,11 +59,18 @@ export function XmskRecipeFlow({ region, token, onExit, onSaved, onAuthError }: 
   }
 
   const handleSave = async () => {
+    if (clientName.trim() === '') {
+      setSaveState('error')
+      setSaveError('회원 이름을 입력해 주세요.')
+      return
+    }
     setSaveState('saving')
     setSaveError(null)
     try {
       await createXmskSession(token, {
         region,
+        clientName: clientName.trim(),
+        trainerName: trainerName.trim() || undefined,
         redFlagsCleared,
         note: note.trim() || undefined,
         before: beforeValues,
@@ -174,6 +183,24 @@ export function XmskRecipeFlow({ region, token, onExit, onSaved, onAuthError }: 
         <h2>{recipe.title}</h2>
         <p className="app-subtitle">{recipe.subtitle}</p>
       </div>
+
+      <section className="xmsk-section">
+        <div className="xmsk-eval-header-grid">
+          <label>
+            회원 이름
+            <input type="text" value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="회원 이름" />
+          </label>
+          <label>
+            담당 트레이너
+            <input
+              type="text"
+              value={trainerName}
+              onChange={(e) => setTrainerName(e.target.value)}
+              placeholder="담당 트레이너 이름 (선택)"
+            />
+          </label>
+        </div>
+      </section>
 
       {stage === 'redflag' && (
         <section className="xmsk-section">
