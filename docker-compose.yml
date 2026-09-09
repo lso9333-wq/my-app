@@ -2,10 +2,27 @@ services:
   my-app:
     build: .
     image: my-app
-    ports:
-      - '8080:8080'
+    expose:
+      - '8080'
     env_file:
       - .env.production
     volumes:
       - ./data:/app/server/data
     restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+    depends_on:
+      - my-app
+
+volumes:
+  caddy_data:
+  caddy_config:
