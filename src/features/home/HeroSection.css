@@ -22,94 +22,6 @@
   align-items: center;
 }
 
-@media (max-width: 560px) {
-  .hero {
-    gap: 6px;
-  }
-
-  .hero-topbar {
-    display: none;
-  }
-
-  .hero-grid {
-    grid-template-columns: 1fr;
-    gap: 4px;
-  }
-
-  .hero-art {
-    min-height: 100px;
-  }
-
-  .hero-figure {
-    max-width: 88px;
-  }
-
-  .hero-chip {
-    padding: 5px 8px;
-    border-radius: 9px;
-  }
-
-  .hero-chip-label {
-    font-size: 9px;
-  }
-
-  .hero-chip-value {
-    font-size: 12px;
-  }
-
-  .hero-copy {
-    gap: 8px;
-  }
-
-  .hero-title {
-    font-size: 18px;
-    line-height: 1.2;
-  }
-
-  /* 세로 목록 대신 가로 스크롤 칩으로 바꿔 체크리스트가 차지하는 세로 공간을 크게 줄입니다. */
-  .hero-checklist {
-    flex-direction: row;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    gap: 6px;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    margin: 0 -20px;
-    padding: 0 20px;
-  }
-
-  .hero-checklist::-webkit-scrollbar {
-    display: none;
-  }
-
-  .hero-checklist li {
-    flex-shrink: 0;
-    white-space: nowrap;
-    font-size: 11px;
-    font-weight: 600;
-    gap: 5px;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    padding: 6px 10px 6px 8px;
-  }
-
-  .hero-check-icon {
-    width: 14px;
-    height: 14px;
-  }
-
-  /* 첫 화면은 CTA 배너가 다음 동작을 안내하므로, 좁은 화면에서는 히어로 자체 버튼은 숨깁니다. */
-  .hero-cta {
-    display: none;
-  }
-
-  .hero-trust {
-    font-size: 10px;
-    padding: 5px 8px;
-  }
-}
-
 .hero-art {
   position: relative;
   display: flex;
@@ -250,4 +162,108 @@
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 8px 12px;
+}
+
+/* 모바일 화면에서 히어로를 한 화면에 담기 위한 축소 스타일.
+   반드시 위의 기본 규칙들보다 뒤에 와야 우선순위(소스 순서)로 실제 적용됩니다. */
+@media (max-width: 560px) {
+  .hero {
+    gap: 6px;
+  }
+
+  .hero-logo {
+    font-size: 13px;
+  }
+
+  .hero-grid {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .hero-art {
+    min-height: 90px;
+    /* 스켈레톤을 중앙 대신 왼쪽으로 붙여, 오른쪽 칩과 자연스럽게 분리되도록 합니다. */
+    justify-content: flex-start;
+  }
+
+  .hero-figure {
+    max-width: 78px;
+  }
+
+  /* 칩 2개가 화면 양 끝까지 퍼져 보이지 않도록 안쪽으로 당겨줍니다
+     (hero-art 자체 너비는 건드리지 않아 일러스트가 사라지는 문제를 피합니다). */
+  .hero-chip-1 {
+    top: auto;
+    bottom: 4px;
+    left: 24%;
+  }
+
+  .hero-chip-2 {
+    right: 10%;
+  }
+
+  .hero-chip {
+    padding: 5px 8px;
+    border-radius: 9px;
+  }
+
+  .hero-chip-label {
+    font-size: 9px;
+  }
+
+  .hero-chip-value {
+    font-size: 12px;
+  }
+
+  .hero-copy {
+    gap: 8px;
+  }
+
+  .hero-title {
+    font-size: 18px;
+    line-height: 1.2;
+  }
+
+  /* 세로 목록 대신 가로 스크롤 칩으로 바꿔 체크리스트가 차지하는 세로 공간을 크게 줄입니다. */
+  .hero-checklist {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 6px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    margin: 0 -20px;
+    padding: 0 20px;
+  }
+
+  .hero-checklist::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hero-checklist li {
+    flex-shrink: 0;
+    white-space: nowrap;
+    font-size: 11px;
+    font-weight: 600;
+    gap: 5px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 10px 6px 8px;
+  }
+
+  .hero-check-icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* 첫 화면은 CTA 배너가 다음 동작을 안내하므로, 좁은 화면에서는 히어로 자체 버튼은 숨깁니다. */
+  .hero-cta {
+    display: none;
+  }
+
+  .hero-trust {
+    font-size: 10px;
+    padding: 5px 8px;
+  }
 }

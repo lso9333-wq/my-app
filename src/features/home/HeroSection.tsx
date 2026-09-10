@@ -21,7 +21,7 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
   return (
     <section className="hero">
       <div className="hero-topbar">
-        <span className="hero-logo">MyDoctor</span>
+        <span className="hero-logo">MyDoctor(내AI주치의)</span>
       </div>
 
       <div className="hero-grid">
