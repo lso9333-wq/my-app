@@ -9,13 +9,17 @@
 
 > ⚠️ 참고용 도구입니다. 의료적 진단이나 전문가의 평가를 대체할 수 없습니다.
 
+## 화면 구성
+
+앱을 열면 먼저 **홈 대시보드**가 나오고, 화면 하단 탭바(홈/보행/ROM/XMSK)로 기능을 오갈 수 있습니다. 홈 화면은 각 기능으로 바로 이동할 수 있는 카드와, 최근 저장된 ROM 분석 기록 미리보기를 보여줍니다.
+
 ## 동작 방식
 
 ### 보행 분석
 
 1. **영상 업로드** — 옆에서 촬영한 걷는 영상을 드래그하거나 선택
-2. **포즈 추출** — TensorFlow.js MoveNet(SinglePose Thunder) 모델로 프레임마다 관절 좌표를 추정 (`src/lib/poseDetector.ts`)
-3. **보행 지표 계산** — 발목 궤적의 극댓값(foot-strike)을 찾아 케이던스, 걸음 간격, 보폭, 좌우 대칭성, 좌우 흔들림 등을 산출 (`src/lib/gaitAnalysis.ts`)
+2. **포즈 추출** — TensorFlow.js MoveNet(SinglePose Thunder) 모델로 프레임마다 관절 좌표를 추정 (`src/shared/lib/poseDetector.ts`)
+3. **보행 지표 계산** — 발목 궤적의 극댓값(foot-strike)을 찾아 케이던스, 걸음 간격, 보폭, 좌우 대칭성, 좌우 흔들림 등을 산출 (`src/features/gait/lib/gaitAnalysis.ts`)
 4. **결과 확인** — 스켈레톤 오버레이 영상 재생, 지표 패널, 걸음 간격/좌우 비교 차트로 결과 표시
 
 모든 거리 지표는 카메라 거리·각도가 일정하지 않은 점을 감안해 미터가 아닌 **다리 길이 기준 상대 단위**로 계산됩니다.
@@ -23,8 +27,8 @@
 ### 스트레칭 가동범위(ROM) 분석
 
 1. **영상 업로드 및 구간 지정** — 스트레칭 전/후 모습이 담긴 영상을 업로드한 뒤, 타임라인에서 "전"/"후" 구간을 각각 지정 (`RangeSelector`)
-2. **포즈 추출 및 관절 각도 계산** — 각 구간에서 프레임별 포즈를 추출하고, 어깨·팔꿈치·엉덩이·무릎 등 8개 관절의 각도를 계산 (`src/lib/jointAngles.ts`)
-3. **가동범위 비교** — 구간별 관절 각도의 최소/최대값으로 가동범위(ROM)를 구하고, 전/후 변화량을 계산 (`src/lib/romAnalysis.ts`)
+2. **포즈 추출 및 관절 각도 계산** — 각 구간에서 프레임별 포즈를 추출하고, 어깨·팔꿈치·엉덩이·무릎 등 8개 관절의 각도를 계산 (`src/features/rom/lib/jointAngles.ts`)
+3. **가동범위 비교** — 구간별 관절 각도의 최소/최대값으로 가동범위(ROM)를 구하고, 전/후 변화량을 계산 (`src/features/rom/lib/romAnalysis.ts`)
 4. **결과 확인 및 저장** — 관절별 전/후/변화량 표와 비교 차트로 결과 표시, 계산된 수치는 백엔드(SQLite)에 저장되어 기록 조회 가능
 
 ## 기술 스택
@@ -52,36 +56,32 @@ npm run preview          # 빌드 결과 로컬 미리보기
 
 ## 프로젝트 구조
 
+기능별(feature-first) 구조입니다 — 홈 대시보드 + 하단 탭 내비게이션으로 보행 분석/ROM 분석/XMSK 세 기능을 오갑니다.
+
 ```
 src/
-├── App.tsx                    # 헤더 + 보행 분석/ROM 분석 탭 전환
-├── GaitApp.tsx                # 보행 분석 파이프라인 상태 관리
-├── RomApp.tsx                 # ROM 분석 파이프라인 상태 관리
-├── lib/
-│   ├── poseDetector.ts        # MoveNet 로드 및 프레임별 포즈 추출 (공유)
-│   ├── mathUtils.ts           # 공유 수학 유틸 (mean/stddev/movingAverage)
-│   ├── gaitAnalysis.ts        # 보행 지표 계산 (순수 함수)
-│   ├── jointAngles.ts         # 프레임별 관절 각도 계산
-│   ├── romAnalysis.ts         # ROM 전/후 비교 계산 (순수 함수)
-│   └── romApi.ts              # ROM 세션 백엔드 API 래퍼
-├── components/
-│   ├── VideoUploader.tsx      # 영상 업로드 UI (공유)
-│   ├── SkeletonViewer.tsx     # 스켈레톤 오버레이 영상 재생/스크러버
-│   ├── GaitMetricsPanel.tsx   # 보행 지표 요약 패널
-│   ├── GaitCharts.tsx         # 걸음 간격/좌우 비교 차트 (공유 컴포넌트 포함)
-│   ├── RangeSelector.tsx      # 전/후 구간 지정 타임라인
-│   ├── RomResultsPanel.tsx    # 관절별 전/후/변화량 결과 패널
-│   └── RomSessionHistory.tsx  # 저장된 ROM 세션 기록 목록
-├── types/
-│   ├── gait.ts                # 보행 분석 타입 정의
-│   └── rom.ts                 # ROM 분석 타입 정의
+├── app/App.tsx                # 헤더 + 탭 콘텐츠 + 하단 탭바로 구성된 셸
+├── navigation/BottomNav.tsx   # 홈/보행/ROM/XMSK 하단 탭바
+├── features/
+│   ├── home/HomeScreen.tsx    # 대시보드 — 기능 카드 3개 + 최근 ROM 기록 미리보기
+│   ├── gait/                  # 보행 분석 (GaitApp.tsx, components/, lib/, types.ts)
+│   ├── rom/                   # ROM 분석 (RomApp.tsx, components/, lib/, types.ts)
+│   └── xmsk/                  # XMSK 트레이너 도구 (XmskApp.tsx, components/, lib/, types.ts)
+├── shared/
+│   ├── lib/poseDetector.ts    # MoveNet 로드 및 프레임별 포즈 추출 (보행+ROM 공유)
+│   ├── lib/mathUtils.ts       # 공유 수학 유틸 (mean/stddev/movingAverage)
+│   ├── lib/chartUtils.ts      # 공유 차트 유틸 (niceMax)
+│   ├── components/VideoUploader.tsx      # 영상 업로드 UI (보행+ROM 공유)
+│   ├── components/ComparisonBarChart.tsx # 좌우/전후 비교 막대그래프 (보행+ROM+XMSK 공유)
+│   └── types/pose.ts          # Side/Point/PoseFrame (보행+ROM 공유 포즈 타입)
 └── shims/mediapipe-pose-shim.ts  # 미사용 BlazePose 런타임 의존성 스텁
 
 server/
-├── index.ts                   # Express 앱, /api/rom-sessions 마운트, dist/ 정적 서빙
+├── index.ts                   # Express 앱, /api/rom-sessions·/api/xmsk 마운트, dist/ 정적 서빙
 ├── db.ts                      # node:sqlite로 server/data/rom.db 오픈 및 테이블 생성
 ├── routes/romSessions.ts      # ROM 세션 생성/목록/조회 라우트
-└── types.ts                   # 요청/응답 타입 (src/types/rom.ts와 별도 유지)
+├── routes/xmsk.ts             # XMSK 인증/세션/평가 라우트
+└── types.ts                   # 요청/응답 타입 (src/features/*/types.ts와 별도 유지)
 ```
 
 자세한 아키텍처 설명은 [CLAUDE.md](./CLAUDE.md)를 참고하세요.

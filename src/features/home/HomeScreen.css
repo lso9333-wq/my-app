@@ -1,0 +1,131 @@
+.home-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.home-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.home-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+
+.home-card:hover {
+  border-color: var(--accent);
+  background: var(--surface-2);
+}
+
+.home-card-icon {
+  font-size: 26px;
+  flex-shrink: 0;
+}
+
+.home-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.home-card-title {
+  font-weight: 600;
+}
+
+.home-card-desc {
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.home-card-arrow {
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.home-recent {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px 20px;
+}
+
+.home-recent-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.home-recent-head h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.home-recent-link {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: var(--accent-hover);
+  font-size: 12px;
+}
+
+.home-recent-link:hover {
+  background: transparent;
+  text-decoration: underline;
+}
+
+.home-recent-empty {
+  color: var(--text-dim);
+  font-size: 13px;
+  margin: 0;
+}
+
+.home-recent-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.home-recent-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  padding: 8px 10px;
+  background: var(--surface-2);
+  border-radius: 10px;
+}
+
+.home-recent-date {
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.home-recent-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-recent-delta {
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
