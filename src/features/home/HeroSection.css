@@ -7,6 +7,18 @@
 .hero-topbar {
   display: flex;
   align-items: center;
+  gap: 6px;
+}
+
+.hero-signal {
+  display: flex;
+  color: var(--accent);
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 70%, transparent));
+}
+
+.hero-signal-icon {
+  width: 18px;
+  height: 18px;
 }
 
 .hero-logo {
@@ -40,6 +52,25 @@
   );
   filter: blur(4px);
   z-index: 0;
+}
+
+/* Grok Bot Radar류 홍보 이미지의 손글씨 스타일 문구를 참고한 장식 텍스트.
+   일반 흐름을 차지하지 않도록 hero-art 위에 절대 위치로 얹습니다. */
+.hero-handwritten {
+  position: absolute;
+  top: -6px;
+  right: -4px;
+  z-index: 3;
+  font-family: 'Gaegu', 'Nanum Pen Script', cursive;
+  font-size: 15px;
+  color: var(--series-right);
+  transform: rotate(-6deg);
+  text-decoration: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: color-mix(in srgb, var(--series-right) 70%, transparent);
+  text-underline-offset: 3px;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 .hero-figure {
@@ -108,34 +139,57 @@
 }
 
 .hero-title {
-  font-size: 26px;
-  line-height: 1.25;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
   margin: 0;
 }
 
-.hero-checklist {
+.hero-feature-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
-.hero-checklist li {
+.hero-feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.hero-feature-icon {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  font-size: 16px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+
+.hero-feature-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hero-feature-title {
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text);
 }
 
-.hero-check-icon {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-  fill: var(--accent);
+.hero-feature-desc {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-dim);
 }
 
 .hero-cta {
@@ -175,6 +229,11 @@
     font-size: 13px;
   }
 
+  .hero-signal-icon {
+    width: 15px;
+    height: 15px;
+  }
+
   .hero-grid {
     grid-template-columns: 1fr;
     gap: 4px;
@@ -184,6 +243,12 @@
     min-height: 90px;
     /* 스켈레톤을 중앙 대신 왼쪽으로 붙여, 오른쪽 칩과 자연스럽게 분리되도록 합니다. */
     justify-content: flex-start;
+  }
+
+  .hero-handwritten {
+    top: -4px;
+    right: 4px;
+    font-size: 12px;
   }
 
   .hero-figure {
@@ -220,46 +285,28 @@
   }
 
   .hero-title {
-    font-size: 18px;
+    font-size: 19px;
     line-height: 1.2;
   }
 
-  /* 세로 목록 대신 가로 스크롤 칩으로 바꿔 체크리스트가 차지하는 세로 공간을 크게 줄입니다. */
-  .hero-checklist {
-    flex-direction: row;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    gap: 6px;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    margin: 0 -20px;
-    padding: 0 20px;
+  /* PC와 동일하게 아이콘+제목+설명이 있는 세로 목록을 그대로 유지하되,
+     좁은 화면에 맞게 크기만 살짝 줄입니다. */
+  .hero-feature-list {
+    gap: 8px;
   }
 
-  .hero-checklist::-webkit-scrollbar {
-    display: none;
+  .hero-feature-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
   }
 
-  .hero-checklist li {
-    flex-shrink: 0;
-    white-space: nowrap;
+  .hero-feature-title {
+    font-size: 13px;
+  }
+
+  .hero-feature-desc {
     font-size: 11px;
-    font-weight: 600;
-    gap: 5px;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    padding: 6px 10px 6px 8px;
-  }
-
-  .hero-check-icon {
-    width: 14px;
-    height: 14px;
-  }
-
-  /* 첫 화면은 CTA 배너가 다음 동작을 안내하므로, 좁은 화면에서는 히어로 자체 버튼은 숨깁니다. */
-  .hero-cta {
-    display: none;
   }
 
   .hero-trust {

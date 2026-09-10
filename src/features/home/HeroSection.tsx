@@ -5,15 +5,15 @@ interface HeroSectionProps {
   onNavigate: (tab: AppTab) => void
 }
 
-const CHECKLIST = [
-  '실시간 포즈 분석',
-  '보행 케이던스 · 좌우 대칭성',
-  '스트레칭 가동범위(ROM) 추적',
-  '트레이너 전용 XMSK 도구',
+const FEATURES = [
+  { icon: '🤖', title: '실시간 포즈 분석', desc: '촬영한 영상에서 프레임마다 관절 위치를 추출해요.' },
+  { icon: '🚶', title: '보행 케이던스 · 대칭성', desc: '걸음 리듬과 좌우 균형을 수치로 보여줘요.' },
+  { icon: '🤸', title: 'ROM(가동범위) 추적', desc: '스트레칭 전/후 관절 각도 변화를 계산해요.' },
+  { icon: '🩺', title: 'XMSK 트레이너 도구', desc: '통증 레시피 · 근육 사전 · 평가표를 제공해요.' },
 ]
 
 /**
- * 홈 화면 상단 히어로. 브랜드 로고 + 일러스트 + 헤드라인/체크리스트/CTA로 구성된
+ * 홈 화면 상단 히어로. 브랜드 로고 + 일러스트 + 헤드라인/기능 리스트/CTA로 구성된
  * 2단 레이아웃(Impakt류 앱의 랜딩 스타일을 참고)이지만, 실제로 이 앱이 하는 일
  * (촬영 영상의 포즈 스켈레톤 분석)을 그대로 보여주는 오리지널 일러스트를 사용합니다.
  */
@@ -21,12 +21,35 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
   return (
     <section className="hero">
       <div className="hero-topbar">
+        <span className="hero-signal" aria-hidden="true">
+          <svg viewBox="0 0 24 24" className="hero-signal-icon">
+            <circle cx="5" cy="19" r="3" fill="currentColor" />
+            <path d="M5 13a9 9 0 0 1 9 9" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            <path
+              d="M5 8a14 14 0 0 1 14 14"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              opacity="0.7"
+            />
+            <path
+              d="M5 3a19 19 0 0 1 19 19"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              opacity="0.45"
+            />
+          </svg>
+        </span>
         <span className="hero-logo">MyDoctor(내AI주치의)</span>
       </div>
 
       <div className="hero-grid">
         <div className="hero-art" aria-hidden="true">
           <div className="hero-art-glow" />
+          <span className="hero-handwritten">찍기만 해도 분석 끝!</span>
           <svg viewBox="0 0 200 260" className="hero-figure">
             <g className="hero-figure-lines">
               <line x1="100" y1="42" x2="100" y2="60" />
@@ -77,14 +100,16 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
             <br />
             회복은 더 빨라지세요.
           </h2>
-          <ul className="hero-checklist">
-            {CHECKLIST.map((item) => (
-              <li key={item}>
-                <svg viewBox="0 0 20 20" className="hero-check-icon" aria-hidden="true">
-                  <circle cx="10" cy="10" r="10" />
-                  <path d="M6 10.5l2.5 2.5L14 7" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                {item}
+          <ul className="hero-feature-list">
+            {FEATURES.map((feature) => (
+              <li key={feature.title} className="hero-feature-item">
+                <span className="hero-feature-icon" aria-hidden="true">
+                  {feature.icon}
+                </span>
+                <span className="hero-feature-body">
+                  <span className="hero-feature-title">{feature.title}</span>
+                  <span className="hero-feature-desc">{feature.desc}</span>
+                </span>
               </li>
             ))}
           </ul>
