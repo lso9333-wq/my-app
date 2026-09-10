@@ -1,8 +1,7 @@
 import './CtaBanner.css'
-import type { AppTab } from '../../navigation/BottomNav'
 
 interface CtaBannerProps {
-  onNavigate: (tab: AppTab) => void
+  onNext: () => void
 }
 
 function timeGreeting(): string {
@@ -13,14 +12,17 @@ function timeGreeting(): string {
   return '편안한 저녁 되세요'
 }
 
-/** Impakt류 앱의 하단 인사+CTA 배너를 참고한 섹션. 로그인 계정이 없어 이름 대신 시간대 인사를 사용합니다. */
-export function CtaBanner({ onNavigate }: CtaBannerProps) {
+/**
+ * Impakt류 앱의 하단 인사+CTA 배너를 참고한 섹션. 로그인 계정이 없어 이름 대신 시간대
+ * 인사를 사용하며, 홈 화면 1페이지에서 2페이지(기능 대시보드)로 넘어가는 트리거 역할을 합니다.
+ */
+export function CtaBanner({ onNext }: CtaBannerProps) {
   return (
     <section className="cta-banner">
       <p className="cta-banner-greeting">{timeGreeting()}!</p>
-      <p className="cta-banner-copy">지금 바로 걷는 영상을 올려서 보행을 분석해보세요.</p>
-      <button type="button" className="cta-banner-button" onClick={() => onNavigate('gait')}>
-        보행 분석 시작하기 →
+      <p className="cta-banner-copy">보행 분석 · ROM 분석 · XMSK까지, MyDoctor의 기능을 살펴보세요.</p>
+      <button type="button" className="cta-banner-button" onClick={onNext}>
+        기능 둘러보기 →
       </button>
     </section>
   )

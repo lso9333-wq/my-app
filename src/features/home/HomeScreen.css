@@ -4,6 +4,49 @@
   gap: 24px;
 }
 
+.home-page-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.home-page-dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: var(--border);
+  transition:
+    width 0.15s,
+    background 0.15s;
+}
+
+.home-page-dot:hover {
+  background: color-mix(in srgb, var(--border) 50%, var(--text-dim) 50%);
+}
+
+.home-page-dot.active {
+  width: 22px;
+  background: var(--accent);
+}
+
+.home-back-link {
+  align-self: flex-start;
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.home-back-link:hover {
+  background: transparent;
+  color: var(--text);
+  text-decoration: underline;
+}
+
 .home-cards {
   display: flex;
   flex-direction: column;
@@ -30,24 +73,34 @@
 }
 
 .home-card-icon {
-  font-size: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
   flex-shrink: 0;
+  font-size: 24px;
+  border-radius: 13px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
 }
 
 .home-card-body {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   flex: 1;
 }
 
 .home-card-title {
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 15px;
 }
 
 .home-card-desc {
-  color: var(--text-dim);
-  font-size: 12px;
+  color: color-mix(in srgb, var(--text-dim) 65%, var(--text) 35%);
+  font-size: 13px;
+  line-height: 1.45;
 }
 
 .home-card-arrow {
@@ -113,8 +166,9 @@
 }
 
 .home-recent-date {
-  color: var(--text-dim);
+  color: color-mix(in srgb, var(--text-dim) 70%, var(--text) 30%);
   font-variant-numeric: tabular-nums;
+  font-weight: 500;
   flex-shrink: 0;
 }
 
@@ -123,9 +177,12 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-weight: 500;
+  color: var(--text);
 }
 
 .home-recent-delta {
-  color: var(--text-dim);
+  color: color-mix(in srgb, var(--text-dim) 60%, var(--text) 40%);
+  font-weight: 600;
   flex-shrink: 0;
 }

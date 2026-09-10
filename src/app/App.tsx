@@ -25,7 +25,17 @@ const FOOTER_LINKS: { key: InfoKey; label: string }[] = [
 
 function App() {
   const [tab, setTab] = useState<AppTab>('home')
+  const [homeResetKey, setHomeResetKey] = useState(0)
   const [activeInfo, setActiveInfo] = useState<InfoKey | null>(null)
+
+  // 홈 탭 아이콘을 누르면 이미 홈 탭이어도(대시보드 2페이지에 있어도) 항상
+  // 1페이지(히어로)부터 다시 보여주도록 HomeScreen을 강제로 리마운트합니다.
+  const handleTabChange = (next: AppTab) => {
+    if (next === 'home') {
+      setHomeResetKey((key) => key + 1)
+    }
+    setTab(next)
+  }
 
   return (
     <div className="app-shell">
@@ -34,7 +44,7 @@ function App() {
       </header>
 
       <main className="app-content">
-        {tab === 'home' && <HomeScreen onNavigate={setTab} />}
+        {tab === 'home' && <HomeScreen key={homeResetKey} onNavigate={handleTabChange} />}
         {tab === 'gait' && <GaitApp />}
         {tab === 'rom' && <RomApp />}
         {tab === 'xmsk' && <XmskApp />}
@@ -51,7 +61,7 @@ function App() {
         <p className="app-footer-copyright">Copyright © 2026 MyDoctor. All Rights Reserved.</p>
       </footer>
 
-      <BottomNav active={tab} onChange={setTab} />
+      <BottomNav active={tab} onChange={handleTabChange} />
 
       {activeInfo && <InfoModal page={INFO_PAGES[activeInfo]} onClose={() => setActiveInfo(null)} />}
     </div>

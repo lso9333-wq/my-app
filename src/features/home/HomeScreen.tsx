@@ -6,6 +6,8 @@ import { listRomSessions } from '../rom/lib/romApi'
 import type { RomSessionListItem } from '../rom/types'
 import type { AppTab } from '../../navigation/BottomNav'
 
+type HomeStage = 'intro' | 'dashboard'
+
 interface FeatureCard {
   tab: AppTab
   icon: string
@@ -44,8 +46,13 @@ interface HomeScreenProps {
   onNavigate: (tab: AppTab) => void
 }
 
-/** Impakt류 앱의 홈 대시보드(오늘의 코칭 카드 + 최근 기록)를 참고한 랜딩 화면. */
+/**
+ * Impakt류 앱의 홈 대시보드를 참고한 랜딩 화면. 한 화면에 다 담기엔 내용이 많아
+ * 1페이지(히어로 + 안내 배너)와 2페이지(기능 카드 + 최근 기록)로 나누고,
+ * 1페이지의 CTA 배너를 눌러 2페이지로 넘어가는 구조로 구성했습니다.
+ */
 export function HomeScreen({ onNavigate }: HomeScreenProps) {
+  const [stage, setStage] = useState<HomeStage>('intro')
   const [recent, setRecent] = useState<RomSessionListItem[] | null>(null)
   const [loadError, setLoadError] = useState(false)
 
@@ -65,63 +72,93 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
 
   return (
     <div className="home-screen">
-      <HeroSection onNavigate={onNavigate} />
+      <div className="home-page-dots" role="tablist" aria-label="홈 화면 페이지">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={stage === 'intro'}
+          aria-label="1페이지"
+          className={`home-page-dot${stage === 'intro' ? ' active' : ''}`}
+          onClick={() => setStage('intro')}
+        />
+        <button
+          type="button"
+          role="tab"
+          aria-selected={stage === 'dashboard'}
+          aria-label="2페이지"
+          className={`home-page-dot${stage === 'dashboard' ? ' active' : ''}`}
+          onClick={() => setStage('dashboard')}
+        />
+      </div>
 
-      <section className="home-cards" aria-label="분석 시작하기">
-        {FEATURE_CARDS.map((card) => (
-          <button
-            key={card.tab}
-            type="button"
-            className="home-card"
-            onClick={() => onNavigate(card.tab)}
-          >
-            <span className="home-card-icon" aria-hidden="true">
-              {card.icon}
-            </span>
-            <span className="home-card-body">
-              <span className="home-card-title">{card.title}</span>
-              <span className="home-card-desc">{card.description}</span>
-            </span>
-            <span className="home-card-arrow" aria-hidden="true">
-              →
-            </span>
+      {stage === 'intro' && (
+        <>
+          <HeroSection onNavigate={onNavigate} />
+          <CtaBanner onNext={() => setStage('dashboard')} />
+        </>
+      )}
+
+      {stage === 'dashboard' && (
+        <>
+          <button type="button" className="home-back-link" onClick={() => setStage('intro')}>
+            ← 처음 화면
           </button>
-        ))}
-      </section>
 
-      <section className="home-recent">
-        <div className="home-recent-head">
-          <h3>최근 ROM 기록</h3>
-          <button type="button" className="home-recent-link" onClick={() => onNavigate('rom')}>
-            전체 보기
-          </button>
-        </div>
-
-        {loadError && <p className="home-recent-empty">기록을 불러오지 못했습니다.</p>}
-        {!loadError && recent === null && <p className="home-recent-empty">불러오는 중...</p>}
-        {!loadError && recent !== null && recent.length === 0 && (
-          <p className="home-recent-empty">아직 저장된 ROM 분석 기록이 없어요.</p>
-        )}
-        {!loadError && recent !== null && recent.length > 0 && (
-          <ul className="home-recent-list">
-            {recent.map((session) => (
-              <li key={session.id} className="home-recent-row">
-                <span className="home-recent-date">{formatDate(session.createdAt)}</span>
-                <span className="home-recent-name">{session.videoName}</span>
-                <span className="home-recent-delta">
-                  {session.avgDeltaRomDeg !== null
-                    ? `평균 변화 ${session.avgDeltaRomDeg > 0 ? '+' : ''}${session.avgDeltaRomDeg.toFixed(1)}°`
-                    : '데이터 부족'}
+          <section className="home-cards" aria-label="분석 시작하기">
+            {FEATURE_CARDS.map((card) => (
+              <button
+                key={card.tab}
+                type="button"
+                className="home-card"
+                onClick={() => onNavigate(card.tab)}
+              >
+                <span className="home-card-icon" aria-hidden="true">
+                  {card.icon}
                 </span>
-              </li>
+                <span className="home-card-body">
+                  <span className="home-card-title">{card.title}</span>
+                  <span className="home-card-desc">{card.description}</span>
+                </span>
+                <span className="home-card-arrow" aria-hidden="true">
+                  →
+                </span>
+              </button>
             ))}
-          </ul>
-        )}
-      </section>
+          </section>
 
-      <CtaBanner onNavigate={onNavigate} />
+          <section className="home-recent">
+            <div className="home-recent-head">
+              <h3>최근 ROM 기록</h3>
+              <button type="button" className="home-recent-link" onClick={() => onNavigate('rom')}>
+                전체 보기
+              </button>
+            </div>
 
-      <p className="disclaimer">⚠️ 참고용 도구입니다. 의료적 진단이나 전문가의 평가를 대체할 수 없습니다.</p>
+            {loadError && <p className="home-recent-empty">기록을 불러오지 못했습니다.</p>}
+            {!loadError && recent === null && <p className="home-recent-empty">불러오는 중...</p>}
+            {!loadError && recent !== null && recent.length === 0 && (
+              <p className="home-recent-empty">아직 저장된 ROM 분석 기록이 없어요.</p>
+            )}
+            {!loadError && recent !== null && recent.length > 0 && (
+              <ul className="home-recent-list">
+                {recent.map((session) => (
+                  <li key={session.id} className="home-recent-row">
+                    <span className="home-recent-date">{formatDate(session.createdAt)}</span>
+                    <span className="home-recent-name">{session.videoName}</span>
+                    <span className="home-recent-delta">
+                      {session.avgDeltaRomDeg !== null
+                        ? `평균 변화 ${session.avgDeltaRomDeg > 0 ? '+' : ''}${session.avgDeltaRomDeg.toFixed(1)}°`
+                        : '데이터 부족'}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <p className="disclaimer">⚠️ 참고용 도구입니다. 의료적 진단이나 전문가의 평가를 대체할 수 없습니다.</p>
+        </>
+      )}
     </div>
   )
 }
