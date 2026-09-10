@@ -29,3 +29,4 @@ server/data/*.db
 *.njsproj
 *.sln
 *.sw?
+.env.production
