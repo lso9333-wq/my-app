@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import './HomeScreen.css'
 import { HeroSection } from './HeroSection'
+import { CtaBanner } from './CtaBanner'
 import { listRomSessions } from '../rom/lib/romApi'
 import type { RomSessionListItem } from '../rom/types'
 import type { AppTab } from '../../navigation/BottomNav'
@@ -117,6 +118,8 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
           </ul>
         )}
       </section>
+
+      <CtaBanner onNavigate={onNavigate} />
 
       <p className="disclaimer">⚠️ 참고용 도구입니다. 의료적 진단이나 전문가의 평가를 대체할 수 없습니다.</p>
     </div>
