@@ -29,6 +29,8 @@ function App() {
         {tab === 'xmsk' && <XmskApp />}
       </main>
 
+      <footer className="app-footer">Copyright © 2026 MyDoctor. All Rights Reserved.</footer>
+
       <BottomNav active={tab} onChange={setTab} />
     </div>
   )

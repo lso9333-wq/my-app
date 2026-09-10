@@ -27,6 +27,13 @@
   margin: 0;
 }
 
+.app-footer {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
 .app-subtitle {
   color: var(--text-dim);
   margin: 0 0 12px;
