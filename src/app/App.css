@@ -8,6 +8,17 @@
   gap: 24px;
 }
 
+@media (max-width: 560px) {
+  .app-shell {
+    padding: 10px 16px calc(88px + env(safe-area-inset-bottom));
+    gap: 10px;
+  }
+}
+
+.home-page-footer {
+  margin-top: 4px;
+}
+
 .app-content {
   display: flex;
   flex-direction: column;

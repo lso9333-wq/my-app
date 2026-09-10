@@ -39,3 +39,26 @@
   padding: 12px 22px;
   border-radius: 999px;
 }
+
+@media (max-width: 560px) {
+  .cta-banner {
+    padding: 12px 14px;
+    gap: 4px;
+    border-radius: 14px;
+  }
+
+  .cta-banner-greeting {
+    font-size: 11px;
+  }
+
+  .cta-banner-copy {
+    font-size: 12px;
+    max-width: none;
+  }
+
+  .cta-banner-button {
+    margin-top: 2px;
+    padding: 8px 18px;
+    font-size: 12px;
+  }
+}

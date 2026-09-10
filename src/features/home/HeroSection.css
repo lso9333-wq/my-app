@@ -23,8 +23,90 @@
 }
 
 @media (max-width: 560px) {
+  .hero {
+    gap: 6px;
+  }
+
+  .hero-topbar {
+    display: none;
+  }
+
   .hero-grid {
     grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .hero-art {
+    min-height: 100px;
+  }
+
+  .hero-figure {
+    max-width: 88px;
+  }
+
+  .hero-chip {
+    padding: 5px 8px;
+    border-radius: 9px;
+  }
+
+  .hero-chip-label {
+    font-size: 9px;
+  }
+
+  .hero-chip-value {
+    font-size: 12px;
+  }
+
+  .hero-copy {
+    gap: 8px;
+  }
+
+  .hero-title {
+    font-size: 18px;
+    line-height: 1.2;
+  }
+
+  /* 세로 목록 대신 가로 스크롤 칩으로 바꿔 체크리스트가 차지하는 세로 공간을 크게 줄입니다. */
+  .hero-checklist {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 6px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    margin: 0 -20px;
+    padding: 0 20px;
+  }
+
+  .hero-checklist::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hero-checklist li {
+    flex-shrink: 0;
+    white-space: nowrap;
+    font-size: 11px;
+    font-weight: 600;
+    gap: 5px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 10px 6px 8px;
+  }
+
+  .hero-check-icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* 첫 화면은 CTA 배너가 다음 동작을 안내하므로, 좁은 화면에서는 히어로 자체 버튼은 숨깁니다. */
+  .hero-cta {
+    display: none;
+  }
+
+  .hero-trust {
+    font-size: 10px;
+    padding: 5px 8px;
   }
 }
 

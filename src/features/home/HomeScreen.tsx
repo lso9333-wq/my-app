@@ -5,6 +5,7 @@ import { CtaBanner } from './CtaBanner'
 import { listRomSessions } from '../rom/lib/romApi'
 import type { RomSessionListItem } from '../rom/types'
 import type { AppTab } from '../../navigation/BottomNav'
+import { FOOTER_LINKS, type InfoKey } from '../../app/legalContent'
 
 type HomeStage = 'intro' | 'dashboard'
 
@@ -44,6 +45,7 @@ function formatDate(iso: string): string {
 
 interface HomeScreenProps {
   onNavigate: (tab: AppTab) => void
+  onOpenInfo: (key: InfoKey) => void
 }
 
 /**
@@ -51,7 +53,7 @@ interface HomeScreenProps {
  * 1페이지(히어로 + 안내 배너)와 2페이지(기능 카드 + 최근 기록)로 나누고,
  * 1페이지의 CTA 배너를 눌러 2페이지로 넘어가는 구조로 구성했습니다.
  */
-export function HomeScreen({ onNavigate }: HomeScreenProps) {
+export function HomeScreen({ onNavigate, onOpenInfo }: HomeScreenProps) {
   const [stage, setStage] = useState<HomeStage>('intro')
   const [recent, setRecent] = useState<RomSessionListItem[] | null>(null)
   const [loadError, setLoadError] = useState(false)
@@ -157,6 +159,17 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
           </section>
 
           <p className="disclaimer">⚠️ 참고용 도구입니다. 의료적 진단이나 전문가의 평가를 대체할 수 없습니다.</p>
+
+          <div className="app-footer home-page-footer">
+            <nav className="app-footer-links" aria-label="사이트 정보">
+              {FOOTER_LINKS.map((link) => (
+                <button key={link.key} type="button" onClick={() => onOpenInfo(link.key)}>
+                  {link.label}
+                </button>
+              ))}
+            </nav>
+            <p className="app-footer-copyright">Copyright © 2026 MyDoctor. All Rights Reserved.</p>
+          </div>
         </>
       )}
     </div>

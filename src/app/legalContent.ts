@@ -1,5 +1,13 @@
 export type InfoKey = 'terms' | 'privacy' | 'about' | 'contact' | 'faq'
 
+export const FOOTER_LINKS: { key: InfoKey; label: string }[] = [
+  { key: 'terms', label: '이용약관' },
+  { key: 'privacy', label: '개인정보처리방침' },
+  { key: 'about', label: '소개' },
+  { key: 'contact', label: '문의하기' },
+  { key: 'faq', label: '자주 묻는 질문' },
+]
+
 export interface InfoSection {
   title: string
   body: string[]

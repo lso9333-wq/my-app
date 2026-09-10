@@ -4,6 +4,16 @@
   gap: 24px;
 }
 
+@media (max-width: 560px) {
+  .home-screen {
+    gap: 8px;
+  }
+
+  .home-page-dots {
+    margin-bottom: -2px;
+  }
+}
+
 .home-page-dots {
   display: flex;
   justify-content: center;

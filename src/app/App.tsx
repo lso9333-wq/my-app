@@ -6,7 +6,7 @@ import RomApp from '../features/rom/RomApp'
 import XmskApp from '../features/xmsk/XmskApp'
 import { BottomNav, type AppTab } from '../navigation/BottomNav'
 import { InfoModal } from '../shared/components/InfoModal'
-import { INFO_PAGES, type InfoKey } from './legalContent'
+import { INFO_PAGES, FOOTER_LINKS, type InfoKey } from './legalContent'
 
 const TAB_TITLES: Record<AppTab, string> = {
   home: 'MyDoctor',
@@ -14,14 +14,6 @@ const TAB_TITLES: Record<AppTab, string> = {
   rom: '스트레칭 가동범위 분석',
   xmsk: 'XMSK',
 }
-
-const FOOTER_LINKS: { key: InfoKey; label: string }[] = [
-  { key: 'terms', label: '이용약관' },
-  { key: 'privacy', label: '개인정보처리방침' },
-  { key: 'about', label: '소개' },
-  { key: 'contact', label: '문의하기' },
-  { key: 'faq', label: '자주 묻는 질문' },
-]
 
 function App() {
   const [tab, setTab] = useState<AppTab>('home')
@@ -37,29 +29,40 @@ function App() {
     setTab(next)
   }
 
+  // 홈 화면은 히어로 자체에 브랜드 로고가 있고, 화면당 내용이 핸드폰 한 화면에
+  // 딱 맞아야 해서 공용 헤더/푸터는 숨기고, 안내 링크는 홈의 2페이지(대시보드)
+  // 안에서 직접 렌더링합니다 (onOpenInfo로 같은 모달을 재사용).
+  const isHome = tab === 'home'
+
   return (
     <div className="app-shell">
-      <header className="app-header">
-        <h1>{TAB_TITLES[tab]}</h1>
-      </header>
+      {!isHome && (
+        <header className="app-header">
+          <h1>{TAB_TITLES[tab]}</h1>
+        </header>
+      )}
 
       <main className="app-content">
-        {tab === 'home' && <HomeScreen key={homeResetKey} onNavigate={handleTabChange} />}
+        {tab === 'home' && (
+          <HomeScreen key={homeResetKey} onNavigate={handleTabChange} onOpenInfo={setActiveInfo} />
+        )}
         {tab === 'gait' && <GaitApp />}
         {tab === 'rom' && <RomApp />}
         {tab === 'xmsk' && <XmskApp />}
       </main>
 
-      <footer className="app-footer">
-        <nav className="app-footer-links" aria-label="사이트 정보">
-          {FOOTER_LINKS.map((link) => (
-            <button key={link.key} type="button" onClick={() => setActiveInfo(link.key)}>
-              {link.label}
-            </button>
-          ))}
-        </nav>
-        <p className="app-footer-copyright">Copyright © 2026 MyDoctor. All Rights Reserved.</p>
-      </footer>
+      {!isHome && (
+        <footer className="app-footer">
+          <nav className="app-footer-links" aria-label="사이트 정보">
+            {FOOTER_LINKS.map((link) => (
+              <button key={link.key} type="button" onClick={() => setActiveInfo(link.key)}>
+                {link.label}
+              </button>
+            ))}
+          </nav>
+          <p className="app-footer-copyright">Copyright © 2026 MyDoctor. All Rights Reserved.</p>
+        </footer>
+      )}
 
       <BottomNav active={tab} onChange={handleTabChange} />
 
