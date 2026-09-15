@@ -9,7 +9,7 @@ import type { Dispatch, SetStateAction } from 'react';
 // import { AppTab, InfoKey } from '../../app/App'; 같은 형태로 바꿔 좁혀주는 게 좋다.
 interface HomeScreenProps {
   onNavigate: (next: any) => void;
-  onInfoOpen: Dispatch<SetStateAction<any>>;
+  onOpenInfo: Dispatch<SetStateAction<any>>;
 }
 
 interface HomeSummary {
@@ -34,7 +34,7 @@ async function fetchHomeSummary(): Promise<HomeSummary> {
   return res.json();
 }
 
-export function HomeScreen({ onNavigate, onInfoOpen }: HomeScreenProps) {
+export function HomeScreen({ onNavigate, onOpenInfo }: HomeScreenProps) {
   const [summary, setSummary] = useState<HomeSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,7 +63,7 @@ export function HomeScreen({ onNavigate, onInfoOpen }: HomeScreenProps) {
           type="button"
           className="home-notify-button"
           aria-label="알림"
-          onClick={() => onInfoOpen('notifications')}
+          onClick={() => onOpenInfo('notifications')}
         >
           🔔
         </button>
