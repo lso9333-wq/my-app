@@ -95,8 +95,13 @@ export function HomeScreen({ onNavigate, onOpenInfo }: HomeScreenProps) {
         <p className="coach-text">{summary.coachMessage}</p>
       </section>
 
-      <button type="button" className="checkin-button" onClick={() => onNavigate('checkin')}>
-        오늘의 체크인 시작하기
+      {/*
+        실제 배포된 App.tsx의 AppTab 값을 확인하지 못해(로컬 src/App.tsx가 라이브 dist와
+        내용이 달라 신뢰할 수 없는 상태) 존재 여부를 모르는 탭으로 이동시키지 않도록
+        일단 onClick을 비워둠. 실제 AppTab 값이 확인되면 onNavigate(...)로 연결할 것.
+      */}
+      <button type="button" className="checkin-button" disabled>
+        오늘의 체크인 시작하기 (준비 중)
       </button>
     </div>
   );
