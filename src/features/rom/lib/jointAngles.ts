@@ -7,7 +7,7 @@ const MIN_SCORE = 0.3
  * 정점 b에서 인접점 a·c가 이루는 각도(0~180도).
  * atan2(cross, dot) 형태를 사용해 0도/180도 근처에서도 수치적으로 안정적이다.
  */
-function angleAtVertexDeg(a: Point, b: Point, c: Point): number {
+export function angleAtVertexDeg(a: Point, b: Point, c: Point): number {
   const v1x = a.x - b.x
   const v1y = a.y - b.y
   const v2x = c.x - b.x

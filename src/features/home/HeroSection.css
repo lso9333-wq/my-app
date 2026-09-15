@@ -17,14 +17,18 @@
 }
 
 .hero-signal-icon {
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
 }
 
+/* 2026-09: "더 크게 + 부드러운 느낌의 글씨체로" 요청 — 기존 Inter(15px)는 각지고
+   작아서, 둥근 느낌의 한글 웹폰트 Gowun Dodum(index.html에서 로드)으로 바꾸고
+   크기도 키웠다. Gowun Dodum은 별도 굵기가 없어(400 하나) font-weight를 지정해도
+   무시되지만, 대신 letter-spacing을 살짝 넓혀 작은 크기에서도 뭉개지지 않게 했다. */
 .hero-logo {
-  font-weight: 700;
-  font-size: 15px;
-  letter-spacing: -0.01em;
+  font-family: 'Gowun Dodum', 'Inter', sans-serif;
+  font-size: 22px;
+  letter-spacing: -0.005em;
 }
 
 .hero-grid {
@@ -40,6 +44,16 @@
   align-items: center;
   justify-content: center;
   min-height: 220px;
+  cursor: pointer;
+}
+
+/* 2026-09: 일러스트가 이제 클릭 가능한 전/후 비교 토글이라, 키보드 포커스 표시를
+   추가한다(role="button"이라 실제 <button>과 동일하게 탭 이동/Enter·Space로
+   조작 가능해야 함). */
+.hero-art:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 6px;
+  border-radius: 20px;
 }
 
 .hero-art-glow {
@@ -79,16 +93,56 @@
   width: 100%;
   max-width: 180px;
   height: auto;
+  transform-origin: 50% 90%;
+  animation: heroFigureSway 3.6s ease-in-out infinite;
+}
+
+/* "실제 인체가 움직이는 모습"처럼 보이도록 미세하게 계속 흔들리는 아이들 모션.
+   각도를 아주 작게(최대 1.6deg) 둬서 산만하지 않게 한다. */
+@keyframes heroFigureSway {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(1.6deg);
+  }
 }
 
 .hero-figure-lines line {
   stroke: var(--text-dim);
-  stroke-width: 2.5;
+  stroke-width: 9;
   stroke-linecap: round;
+}
+
+/* 얇은 뼈대선만으로는 "실제 몸"처럼 보이지 않아서, 몸통 부분에 은은한 채움을
+   더해 실루엣처럼 보이게 한다(2026-09). */
+.hero-body-fill {
+  fill: color-mix(in srgb, var(--text-dim) 22%, transparent);
 }
 
 .joint {
   fill: var(--text);
+}
+
+/* 표정 — 머리 원(fill: var(--text))과 반대색인 --surface를 써서 라이트/다크
+   모드 어디서나 눈·입·눈썹이 또렷하게 보이도록 한다(index.css 기준 --text와
+   --surface는 서로 반전된 값이라 항상 대비가 보장된다). */
+.hero-face-eye {
+  fill: var(--surface);
+}
+
+.hero-face-mouth {
+  fill: none;
+  stroke: var(--surface);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+
+.hero-face-brows line {
+  stroke: var(--surface);
+  stroke-width: 2.2;
+  stroke-linecap: round;
 }
 
 .joint-left circle {
@@ -97,6 +151,88 @@
 
 .joint-right circle {
   fill: var(--series-right);
+}
+
+/* 포즈 인식 점이 실제로 지금 관절을 찍고 있는 것처럼 은은하게 깜빡인다. */
+.joint circle,
+circle.joint {
+  animation: heroJointPulse 2.2s ease-in-out infinite;
+}
+
+@keyframes heroJointPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* 골반 중심(100,140 = 뷰박스 200x260 기준 50%, 53.85%)을 축으로 상체 전체(머리·
+   목·어깨·양팔·몸통 채움)를 회전시켜 "허리 굽히기"를 표현한다. 클릭할 때마다
+   정면(클래스 없음) → .left(왼쪽으로 -45deg) → .right(오른쪽으로 +45deg) →
+   다시 정면 순서로 순환한다(실제 스트레칭의 좌우 측굴 동작과 같은 개념) — 실제
+   ROM 기능이 스트레칭 전/후 각도 변화를 재는 것과 같은 개념을 일러스트로 보여주는
+   것. 다리는 이 그룹 밖에 고정돼 있어 발이 그대로 딛고 있는 것처럼 보인다. */
+.hero-bend-toggle {
+  /* transform-origin의 %는 기본적으로 이 <g> 자신의 바운딩 박스 기준이라, 뷰박스
+     (0 0 200 260) 좌표인 골반 위치(100,140 → 50%, 53.85%)를 그대로 쓰려면
+     transform-box를 view-box로 바꿔줘야 한다 — 안 그러면 상체 자체의 바운딩
+     박스를 기준으로 회전해서 엉뚱한 위치로 튄다. */
+  transform-box: view-box;
+  transform-origin: 50% 53.85%;
+  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.hero-bend-toggle.left {
+  transform: rotate(-45deg);
+}
+
+.hero-bend-toggle.right {
+  transform: rotate(45deg);
+}
+
+/* 런지 "체중 중심" 단계에서 앞발 뒤꿈치 위치에 뜨는 강조 점 — 커졌다 작아지며
+   옅어지는 펄스로 "체중이 여기 실린다"는 걸 눈에 띄게 보여준다. */
+.hero-weight-marker {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 3;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: heroWeightPulse 0.8s ease-in-out infinite;
+}
+
+@keyframes heroWeightPulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(1.35);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-figure {
+    animation: none;
+  }
+
+  .joint circle,
+  circle.joint {
+    animation: none;
+  }
+
+  .hero-bend-toggle {
+    transition: none;
+  }
+
+  .hero-weight-marker {
+    animation: none;
+  }
 }
 
 .hero-chip {
@@ -112,8 +248,11 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
+/* 2026-09: 케이던스 칩(좌)을 가동범위 변화 칩(우)과 같은 높이(bottom: 10%)로
+   내려서 두 칩이 하단에 나란히(평행하게) 놓이도록 했다 — 예전엔 케이던스가
+   좌상단, 가동범위 변화가 우하단으로 서로 다른 높이에 있었다. */
 .hero-chip-1 {
-  top: 6%;
+  bottom: 10%;
   left: 2%;
 }
 
@@ -226,12 +365,12 @@
   }
 
   .hero-logo {
-    font-size: 13px;
+    font-size: 18px;
   }
 
   .hero-signal-icon {
-    width: 15px;
-    height: 15px;
+    width: 20px;
+    height: 20px;
   }
 
   .hero-grid {
@@ -256,10 +395,10 @@
   }
 
   /* 칩 2개가 화면 양 끝까지 퍼져 보이지 않도록 안쪽으로 당겨줍니다
-     (hero-art 자체 너비는 건드리지 않아 일러스트가 사라지는 문제를 피합니다). */
+     (hero-art 자체 너비는 건드리지 않아 일러스트가 사라지는 문제를 피합니다).
+     높이(bottom)는 기본 스타일에서 이미 두 칩이 같은 값(10%)이라 여기서는
+     따로 건드리지 않고 좌우 위치만 조정합니다. */
   .hero-chip-1 {
-    top: auto;
-    bottom: 4px;
     left: 24%;
   }
 

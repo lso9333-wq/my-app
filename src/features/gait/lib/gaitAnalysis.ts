@@ -1,5 +1,5 @@
-import type { GaitMetrics, StepEvent } from '../types'
-import type { PoseFrame, Side } from '../../../shared/types/pose'
+import type { FallRiskAssessment, FallRiskFactor, GaitMetrics, StepEvent } from '../types'
+import type { Point, PoseFrame, Side } from '../../../shared/types/pose'
 import { mean, movingAverage, stddev } from '../../../shared/lib/mathUtils'
 
 /** 두 값의 좌우 대칭 지수(%). 0에 가까울수록 대칭적. */
@@ -15,8 +15,56 @@ function legScale(frame: PoseFrame): number {
   return (leftLen + rightLen) / 2 || 1
 }
 
+const HEEL_MIN_SCORE = 0.35
+/** 이 비율 이상의 프레임에서 신뢰도 있는 뒤꿈치가 잡혀야 발목 대신 뒤꿈치를 기준점으로 쓴다. */
+const HEEL_MIN_COVERAGE = 0.6
+
+/** 해당 발의 뒤꿈치 키포인트가 충분히 신뢰할 만한 프레임의 비율 */
+function heelCoverage(frames: PoseFrame[], side: Side): number {
+  if (frames.length === 0) return 0
+  const good = frames.filter((f) => (side === 'left' ? f.leftHeel : f.rightHeel).score >= HEEL_MIN_SCORE).length
+  return good / frames.length
+}
+
 /**
- * 지역 극댓값을 찾는다. 발목의 y좌표(이미지 좌표, 아래로 갈수록 값이 큼)가
+ * 발이 바닥에 닿는 위치의 기준점. 뒤꿈치(heel)가 발목보다 실제 입각기(heel-strike)
+ * 시점의 지면 접촉을 더 정확히 반영한다는 최신 연구 결과에 따라, 해당 프레임에서
+ * 뒤꿈치 신뢰도가 충분하면 뒤꿈치를, 아니면 발목을 사용한다(그레이스풀 폴백).
+ */
+function footPoint(frame: PoseFrame, side: Side, useHeel: boolean): Point {
+  const heel = side === 'left' ? frame.leftHeel : frame.rightHeel
+  const ankle = side === 'left' ? frame.leftAnkle : frame.rightAnkle
+  return useHeel && heel.score >= HEEL_MIN_SCORE ? heel : ankle
+}
+
+/** 이 신뢰도 미만인 프레임의 발 좌표는 튀는 값으로 보고 직전 값으로 대체한다. */
+const FOOT_MIN_SCORE = 0.2
+
+/**
+ * 프레임별 발 y좌표(정규화 단위) 시계열을 만든다. 옆에서 찍은 보행 영상은
+ * 걸음마다 한쪽 발이 반대쪽 다리에 가려 그 프레임만 신뢰도가 순간적으로
+ * 떨어지는 경우가 흔하다(정상적인 자기 폐색). 이런 프레임까지 그대로 쓰면
+ * 좌표가 튀어 걸음으로 잘못 감지될 수 있으므로, 신뢰도가 낮은 프레임은
+ * 직전의 신뢰도 높은 값으로 유지(hold)한다.
+ */
+function buildFootYSeries(frames: PoseFrame[], side: Side, useHeel: boolean, scales: number[]): number[] {
+  const series: number[] = []
+  let last: number | null = null
+  for (let i = 0; i < frames.length; i++) {
+    const pt = footPoint(frames[i], side, useHeel)
+    const val = pt.y / scales[i]
+    if (pt.score >= FOOT_MIN_SCORE || last === null) {
+      last = val
+      series.push(val)
+    } else {
+      series.push(last)
+    }
+  }
+  return series
+}
+
+/**
+ * 지역 극댓값을 찾는다. 발 기준점의 y좌표(이미지 좌표, 아래로 갈수록 값이 큼)가
  * 극댓값을 가질 때 발이 바닥에 닿는 시점(입각기)으로 간주한다.
  */
 function findPeaks(
@@ -61,6 +109,12 @@ function intervalsForFoot(series: GaitMetrics['stepIntervalSeries'], foot: Side)
   return series.filter((s) => s.foot === foot).map((s) => s.intervalSec)
 }
 
+const EMPTY_FALL_RISK: FallRiskAssessment = {
+  score: 0,
+  level: 'insufficient-data',
+  factors: [],
+}
+
 function emptyMetrics(frames: PoseFrame[]): GaitMetrics {
   const durationSec = frames.length > 1 ? frames[frames.length - 1].time - frames[0].time : 0
   return {
@@ -80,7 +134,92 @@ function emptyMetrics(frames: PoseFrame[]): GaitMetrics {
     lateralSwayNorm: 0,
     stepEvents: [],
     stepIntervalSeries: [],
+    fallRisk: EMPTY_FALL_RISK,
   }
+}
+
+/**
+ * 전도(낙상) 위험 참고 점수 (0~100, 높을수록 위험 신호가 많음).
+ *
+ * 보행 변수와 낙상 위험의 연관성을 다룬 최신 연구들을 참고해 구성했다:
+ * - 걸음(스트라이드) 시간 변동성(CV%)이 클수록 낙상 이력·낙상 위험군에서
+ *   일관되게 높게 나타난다는 것은 노인 보행 연구에서 가장 널리 반복 검증된
+ *   소견 중 하나이며, 2024~2025년 보행 변동성·머신러닝 기반 낙상 위험 분류
+ *   연구에서도 케이던스·걸음 시간 변동성이 핵심 예측 변수로 쓰인다.
+ * - 좌우 시간/보폭 비대칭(asymmetry)이 클수록 낙상 위험과 관련된다는 소견도
+ *   보행 분석 문헌에서 반복적으로 보고된다.
+ * - 좌우 흔들림(측면 sway)의 증가 역시 자세 불안정성·낙상 위험과 연관된다는
+ *   것이 최근 보행 변동성 연구(2025)에서 보고된다.
+ * - 케이던스가 뚜렷하게 느린 경우(조심스러운 보행) 역시 노쇠·낙상 위험과
+ *   연관된다고 알려져 있다.
+ *
+ * 다만 여러 리뷰 논문에서 공통적으로 지적하듯, 이 지표들에 대한 "표준화된
+ * 임상 컷오프"는 아직 존재하지 않는다. 실제 임상 낙상 확률 예측 모델(예: 2024년
+ * BMC Public Health 로지스틱 회귀 모델)은 이 앱이 얻을 수 없는 입력값(임상
+ * 평가 점수, 미터 단위 실측 보폭 등)을 필요로 한다. 따라서 아래 점수는 검증된
+ * 임상 확률이 아니라, 이미 계산된 상대 단위 보행 지표를 연구 근거의 방향성에
+ * 따라 종합한 "참고용" 지표로만 사용해야 한다.
+ */
+function computeFallRisk(metrics: Omit<GaitMetrics, 'fallRisk'>): FallRiskAssessment {
+  if (metrics.totalSteps < 4) return EMPTY_FALL_RISK
+
+  const factors: FallRiskFactor[] = []
+
+  const cv = metrics.stepIntervalCV
+  factors.push({
+    key: 'stepIntervalCV',
+    label: '걸음 시간 변동성(CV)',
+    points: cv < 4 ? 0 : cv < 8 ? 12 : cv < 15 ? 24 : 35,
+    maxPoints: 35,
+    note: `${cv.toFixed(1)}% — 걸음마다 리듬이 얼마나 일정한지 (변동성이 클수록 낙상 위험과 관련된다는 연구가 다수)`,
+  })
+
+  const tSym = metrics.temporalSymmetryPercent
+  factors.push({
+    key: 'temporalSymmetry',
+    label: '좌우 시간 대칭성',
+    points: tSym < 5 ? 0 : tSym < 10 ? 7 : tSym < 20 ? 14 : 20,
+    maxPoints: 20,
+    note: `${tSym.toFixed(1)}% — 좌우 다리의 걸음 리듬 차이`,
+  })
+
+  const lSym = metrics.stepLengthSymmetryPercent
+  factors.push({
+    key: 'stepLengthSymmetry',
+    label: '좌우 보폭 대칭성',
+    points: lSym < 5 ? 0 : lSym < 10 ? 5 : lSym < 20 ? 10 : 15,
+    maxPoints: 15,
+    note: `${lSym.toFixed(1)}% — 좌우 다리의 보폭 차이`,
+  })
+
+  // 좌우 흔들림을 다리 길이가 아닌 "평균 보폭" 대비 비율로 봐, 전진 이동량 대비
+  // 옆으로 얼마나 흔들리는지를 나타내는 상대 지표로 사용한다.
+  if (metrics.meanStepLengthNorm > 0) {
+    const swayRatio = metrics.lateralSwayNorm / metrics.meanStepLengthNorm
+    factors.push({
+      key: 'lateralSway',
+      label: '좌우 흔들림(체간 sway)',
+      points: swayRatio < 0.15 ? 0 : swayRatio < 0.3 ? 5 : swayRatio < 0.5 ? 10 : 15,
+      maxPoints: 15,
+      note: `보폭 대비 ${(swayRatio * 100).toFixed(0)}% — 걷는 동안 골반 중심이 옆으로 흔들리는 정도`,
+    })
+  }
+
+  const cadence = metrics.cadenceStepsPerMin
+  factors.push({
+    key: 'cadence',
+    label: '케이던스(걸음 속도감)',
+    points: cadence >= 100 ? 0 : cadence >= 80 ? 5 : cadence >= 60 ? 10 : 15,
+    maxPoints: 15,
+    note: `${cadence.toFixed(0)} 걸음/분 — 지나치게 느리고 조심스러운 보행은 노쇠·낙상 위험과 연관될 수 있음`,
+  })
+
+  const maxTotal = factors.reduce((sum, f) => sum + f.maxPoints, 0)
+  const rawTotal = factors.reduce((sum, f) => sum + f.points, 0)
+  const score = maxTotal > 0 ? Math.round((rawTotal / maxTotal) * 100) : 0
+  const level: FallRiskAssessment['level'] = score < 25 ? 'low' : score < 50 ? 'moderate' : 'high'
+
+  return { score, level, factors }
 }
 
 /**
@@ -94,10 +233,13 @@ export function computeGaitMetrics(frames: PoseFrame[], minPeakDistanceSec = 0.2
   const times = frames.map((f) => f.time)
   const scales = movingAverage(frames.map(legScale), 5)
 
-  const leftY = frames.map((f, i) => f.leftAnkle.y / scales[i])
-  const rightY = frames.map((f, i) => f.rightAnkle.y / scales[i])
-  const leftYSmooth = movingAverage(leftY, 3)
-  const rightYSmooth = movingAverage(rightY, 3)
+  const useHeelLeft = heelCoverage(frames, 'left') >= HEEL_MIN_COVERAGE
+  const useHeelRight = heelCoverage(frames, 'right') >= HEEL_MIN_COVERAGE
+
+  const leftFootY = buildFootYSeries(frames, 'left', useHeelLeft, scales)
+  const rightFootY = buildFootYSeries(frames, 'right', useHeelRight, scales)
+  const leftYSmooth = movingAverage(leftFootY, 3)
+  const rightYSmooth = movingAverage(rightFootY, 3)
 
   const leftPeaks = findPeaks(times, leftYSmooth, minPeakDistanceSec, 0.15)
   const rightPeaks = findPeaks(times, rightYSmooth, minPeakDistanceSec, 0.15)
@@ -107,8 +249,8 @@ export function computeGaitMetrics(frames: PoseFrame[], minPeakDistanceSec = 0.2
     events.push({
       time: times[idx],
       foot: 'left',
-      ankleX: frames[idx].leftAnkle.x / scales[idx],
-      ankleY: leftYSmooth[idx],
+      footX: footPoint(frames[idx], 'left', useHeelLeft).x / scales[idx],
+      footY: leftYSmooth[idx],
       stepLengthNorm: null,
     })
   }
@@ -116,8 +258,8 @@ export function computeGaitMetrics(frames: PoseFrame[], minPeakDistanceSec = 0.2
     events.push({
       time: times[idx],
       foot: 'right',
-      ankleX: frames[idx].rightAnkle.x / scales[idx],
-      ankleY: rightYSmooth[idx],
+      footX: footPoint(frames[idx], 'right', useHeelRight).x / scales[idx],
+      footY: rightYSmooth[idx],
       stepLengthNorm: null,
     })
   }
@@ -127,7 +269,7 @@ export function computeGaitMetrics(frames: PoseFrame[], minPeakDistanceSec = 0.2
   for (const ev of events) {
     const opp: Side = ev.foot === 'left' ? 'right' : 'left'
     const prevOpp = lastOpposite[opp]
-    if (prevOpp) ev.stepLengthNorm = Math.abs(ev.ankleX - prevOpp.ankleX)
+    if (prevOpp) ev.stepLengthNorm = Math.abs(ev.footX - prevOpp.footX)
     lastOpposite[ev.foot] = ev
   }
 
@@ -169,7 +311,7 @@ export function computeGaitMetrics(frames: PoseFrame[], minPeakDistanceSec = 0.2
   const hipMidX = frames.map((f, i) => (f.leftHip.x + f.rightHip.x) / 2 / scales[i])
   const lateralSwayNorm = stddev(hipMidX)
 
-  return {
+  const base: Omit<GaitMetrics, 'fallRisk'> = {
     durationSec,
     frameCount: frames.length,
     totalSteps,
@@ -187,4 +329,6 @@ export function computeGaitMetrics(frames: PoseFrame[], minPeakDistanceSec = 0.2
     stepEvents: events,
     stepIntervalSeries,
   }
+
+  return { ...base, fallRisk: computeFallRisk(base) }
 }

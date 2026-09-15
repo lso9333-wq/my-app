@@ -1,3 +1,8 @@
+// 2026-09 보안 점검 이후 더는 쓰이지 않는 파일이다 — XmskApp.tsx가 이제 자기만의
+// 잠금 화면을 렌더링하지 않고 App.tsx가 최상위에서 관리하는
+// shared/components/AppPasswordGate.tsx(이 컴포넌트를 그대로 일반화한 것)를 쓴다.
+// 실제 동작에는 영향이 없지만(아무 데서도 import하지 않음), 예전 XMSK 전용 잠금
+// 방식이 어떻게 생겼었는지 참고할 수 있도록 파일은 지우지 않고 남겨둔다.
 import { useState, type FormEvent } from 'react'
 import { xmskAuth } from '../lib/xmskApi'
 

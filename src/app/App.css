@@ -187,7 +187,183 @@ button:disabled {
   align-self: center;
 }
 
+.pdf-export-button {
+  align-self: flex-start;
+}
+
+.pdf-export-button-kakao {
+  background: #fef3c7;
+  border: 1px solid #f0c34d;
+  color: #7a5b00;
+}
+
+.pdf-export-button-kakao:hover {
+  background: #fde8a8;
+}
+
+.print-report-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* 평소 화면에는 절대 보이지 않고, @media print 안에서 특정 조건일 때만 나타난다(위 참고). */
+.print-fallback-notice {
+  display: none;
+}
+
+.print-report-header h3 {
+  margin: 0;
+}
+
+.print-report-date {
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+/*
+ * PDF 내보내기(PdfExportButton)는 새 라이브러리 없이 브라우저 내장 인쇄 기능을 쓴다.
+ * 클릭한 결과 패널에만 `printable-report-active` 클래스를 잠깐 붙이고, 아래 규칙으로
+ * 인쇄 시 그 요소만 보이게 한다(고전적인 "이 요소만 인쇄하기" 기법 — body의 모든
+ * 요소를 visibility:hidden으로 감췄다가, 대상 요소와 그 자손만 다시 visible로
+ * 되돌리고 페이지 좌상단으로 위치시킨다). 이 클래스는 @media print 밖에서는 아무
+ * 효과가 없어 평소 화면 표시에는 영향을 주지 않는다. 다크 테마 그대로 인쇄하면
+ * 밝은 회색 글자가 흰 종이 위에서 거의 안 보이므로, 인쇄 시에만 색상 변수를 밝은
+ * 테마로 바꿔치기한다(개별 컴포넌트는 이미 모두 var(--text) 등을 쓰고 있어 이
+ * 재정의만으로 전체가 자연스럽게 인쇄용 배색이 된다).
+ */
+@media print {
+  :root {
+    --bg: #ffffff;
+    --bg-glow: none;
+    --surface: #ffffff;
+    --surface-2: #ffffff;
+    --border: #cccccc;
+    --text: #111111;
+    --text-dim: #444444;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .printable-report-active,
+  .printable-report-active * {
+    visibility: visible;
+  }
+
+  /*
+   * `visibility: hidden`만으로는 숨긴 요소가 여전히 문서 흐름 안에서 원래 화면
+   * 높이만큼 자리를 차지한다 — 예를 들어 "보행분석 진단 기록" 카드 하나를 인쇄해도,
+   * 같은 페이지에 있던 방금 분석한 영상/차트나 다른 기록 목록이 (보이지는 않지만)
+   * 여전히 그만큼의 세로 공간을 차지하고 있으면, 인쇄 엔진은 실제로는 아무 것도
+   * 그려지지 않는 그 빈 공간을 채우기 위해 뒤쪽에 완전히 빈 페이지를 추가로 만들어
+   * 낸다(실제로 이렇게 재현됨 — 인쇄 내용은 1페이지뿐인데 총 3페이지가 만들어지고
+   * 2·3페이지가 비어 있는 형태). 인쇄 대상(및 그 조상·자손)이 아닌 모든 요소는
+   * `display: none`으로 문서 흐름에서 완전히 제거해 이 여백 자체를 없앤다 —
+   * `:has()`로 "인쇄 대상을 자손으로 포함하는 조상"은 제외해 대상이 실제로
+   * 그려지는 데 필요한 조상 체인은 그대로 남긴다.
+   */
+  body
+    :not(.printable-report-active):not(.printable-report-active *):not(:has(.printable-report-active)):not(
+      #print-fallback-notice
+    ):not(:has(#print-fallback-notice)) {
+    display: none !important;
+  }
+
+  .printable-report-active {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    /*
+     * 방어적 리셋: 대상 요소 자체(또는 캡처 시점의 잔여 인라인 스타일)에 화면 표시용
+     * height/overflow 제약이 남아있으면, position:absolute로 빠져나와도 내용 일부가
+     * 잘려 보이지 않을 수 있다. 인쇄 시에는 내용 전체 높이만큼 항상 자연스럽게
+     * 늘어나도록 강제한다.
+     */
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .printable-report-active * {
+    max-height: none !important;
+    overflow: visible !important;
+    /* 인쇄용 클래스를 붙인 직후 캡처가 시작될 때 진행 중이던 전환 효과(예: 낙상 위험
+       점수 막대)가 중간 상태로 찍히는 것을 막는다. */
+    transition: none !important;
+    animation: none !important;
+  }
+
+  /*
+   * 여러 섹션(통계 카드, 차트, 헤더)이 인쇄 페이지 경계에서 중간에 잘리며 나뉘지
+   * 않도록 한다 — 특히 한 섹션이 페이지 끝에 걸치면 일부 뷰어/프린터 드라이버에서
+   * 그 섹션 전체가 다음 페이지로 밀리거나 시각적으로 누락된 것처럼 보이는 경우가 있다.
+   */
+  .print-report-header,
+  .stat-tile,
+  .fall-risk-panel,
+  .chart-card,
+  .chart-row {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  /*
+   * 아무 결과 화면에서 "PDF로 다운로드" 버튼을 누르지 않은 채(즉 `.printable-report-active`가
+   * 어디에도 없는 채) 브라우저 자체의 "인쇄/PDF" 메뉴로 인쇄를 시도하면, 위 규칙들 때문에
+   * 페이지 전체가 완전히 빈 채로 인쇄된다 — 실제로 이렇게 겪은 사용자가 있어, 그 상황에서만
+   * 안내 문구가 대신 보이도록 한다(`:has()`로 "인쇄 대상이 아예 없는 문서"를 감지).
+   */
+  body:not(:has(.printable-report-active)) #print-fallback-notice {
+    display: block !important;
+    visibility: visible !important;
+    position: absolute;
+    top: 60px;
+    left: 24px;
+    right: 24px;
+    font-size: 18px;
+    line-height: 1.6;
+    text-align: center;
+    color: #111111;
+  }
+
+  /*
+   * 진단 기록 상세 PDF에서 "분석 당시 상세 결과"(통계+그래프) 구획은 1페이지 내용
+   * 분량과 무관하게 항상 새 페이지에서 시작하도록 강제한다 — 그래서 늘 "2페이지"에
+   * 나온다(사용자가 명시적으로 요청한 배치).
+   */
+  .gait-diagnostic-page2 {
+    break-before: page;
+    page-break-before: always;
+  }
+}
+
+.gait-diagnostic-page2 {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px dashed var(--border);
+}
+
+.gait-diagnostic-page2-title {
+  margin: 0 0 4px;
+}
+
 .results {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.gait-report {
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -271,6 +447,12 @@ button:disabled {
   margin-top: 4px;
 }
 
+.metrics-empty-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .metrics-empty {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -278,6 +460,150 @@ button:disabled {
   padding: 20px;
   color: var(--text-dim);
   text-align: center;
+}
+
+.debug-stats-panel {
+  background: var(--surface-2);
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.debug-stats-title {
+  margin: 0 0 6px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.debug-stats-list {
+  margin: 0;
+  padding-left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gait-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.fall-risk-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  --risk-color: var(--text-dim);
+}
+
+.fall-risk-panel.fall-risk-low {
+  --risk-color: #3ecf8e;
+}
+
+.fall-risk-panel.fall-risk-moderate {
+  --risk-color: #e0a63e;
+}
+
+.fall-risk-panel.fall-risk-high {
+  --risk-color: #f0555a;
+}
+
+.fall-risk-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.fall-risk-head h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.fall-risk-badge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  color: var(--risk-color);
+  background: color-mix(in srgb, var(--risk-color) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--risk-color) 45%, transparent);
+}
+
+.fall-risk-score-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fall-risk-score-bar {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.fall-risk-score-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--risk-color);
+  transition: width 0.2s;
+}
+
+.fall-risk-score-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.fall-risk-factor-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fall-risk-factor {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 12px;
+}
+
+.fall-risk-factor-label {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.fall-risk-factor-note {
+  color: var(--text-dim);
+}
+
+.fall-risk-disclaimer {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-dim);
+  background: var(--surface-2);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.fall-risk-empty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-dim);
 }
 
 .chart-row {
@@ -549,6 +875,121 @@ button:disabled {
   margin: 0;
 }
 
+.rom-xmsk-estimates {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rom-xmsk-estimates h4 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.rom-xmsk-unit {
+  color: var(--text-dim);
+  font-weight: 400;
+}
+
+.rom-xmsk-evidence {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.rom-xmsk-evidence-approximate {
+  color: #5fb0d6;
+  background: color-mix(in srgb, #5fb0d6 18%, transparent);
+}
+
+.rom-xmsk-evidence-experimental {
+  color: #d6a35f;
+  background: color-mix(in srgb, #d6a35f 18%, transparent);
+}
+
+.rom-xmsk-methodology {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.rom-xmsk-methodology summary {
+  cursor: pointer;
+  color: var(--text);
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.rom-xmsk-methodology .debug-stats-list {
+  margin-top: 8px;
+}
+
+.rom-xmsk-region {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.rom-xmsk-region:first-of-type {
+  padding-top: 0;
+  border-top: none;
+}
+
+.rom-xmsk-region h5 {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.rom-xmsk-table {
+  margin: 0;
+}
+
+.rom-xmsk-manual-input {
+  width: 56px;
+  padding: 4px 6px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+}
+
+.rom-xmsk-evidence-manual {
+  color: #b6b6b6;
+  background: color-mix(in srgb, #b6b6b6 18%, transparent);
+}
+
+.rom-xmsk-groundtruth-input {
+  width: 72px;
+  padding: 4px 6px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+}
+
+.rom-xmsk-covered-notes,
+.rom-xmsk-manual-note {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.rom-xmsk-covered-notes {
+  padding-left: 18px;
+}
+
 .rom-history {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -579,6 +1020,52 @@ button:disabled {
   display: flex;
   align-items: stretch;
   gap: 6px;
+}
+
+.rom-history-row-checkbox {
+  flex-shrink: 0;
+  width: 18px;
+  align-self: center;
+  cursor: pointer;
+}
+
+.rom-history-bulk-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  background: var(--surface-2);
+  border-radius: 10px;
+  flex-wrap: wrap;
+}
+
+.rom-history-select-all {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.rom-history-bulk-delete {
+  font-size: 12px;
+  padding: 6px 12px;
+  color: #e88a89;
+  border-color: #e88a89;
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.rom-history-bulk-delete:hover:not(:disabled) {
+  background: var(--surface);
+}
+
+.rom-history-bulk-delete:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .rom-history-row-main {
@@ -615,6 +1102,22 @@ button:disabled {
 .rom-history-detail h4 {
   margin: 0 0 12px;
   font-size: 14px;
+  color: var(--text-dim);
+}
+
+.gait-diagnostics-search {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  font-size: 13px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.gait-diagnostics-search::placeholder {
   color: var(--text-dim);
 }
 
@@ -1017,4 +1520,91 @@ button:disabled {
 .xmsk-eval-verdict-hold .xmsk-eval-verdict-label,
 .xmsk-eval-verdict-label.xmsk-eval-verdict-hold {
   color: #e88a89;
+}
+
+/* 뇌파(EEG) 실시간 표시 — 다른 기능들과 달리 서버 저장이 없는 클라이언트 전용 화면.
+ * CLAUDE.md "뇌파(EEG) 실시간 표시" 절 참고. */
+.eeg-app {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.eeg-connect-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.eeg-connect-button {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  padding: 10px 18px;
+}
+
+.eeg-disconnect-button {
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.eeg-device-info {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+/* 손·발 분석의 EegCaptureControl(동시 측정 뇌파 캡처) 전용 — ① 안정/② 활동 두 버튼을
+ * 나란히 놓는다. */
+.eeg-capture-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.eeg-waveform-canvas {
+  width: 100%;
+  height: 240px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.eeg-band-powers {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.eeg-band-row {
+  display: grid;
+  grid-template-columns: 160px 1fr 48px;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.eeg-band-label {
+  color: var(--text-dim);
+}
+
+.eeg-band-bar-track {
+  height: 10px;
+  background: var(--surface-2);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.eeg-band-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 6px;
+  transition: width 0.2s ease-out;
+}
+
+.eeg-band-value {
+  text-align: right;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
 }

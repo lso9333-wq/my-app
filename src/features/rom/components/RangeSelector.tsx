@@ -78,10 +78,10 @@ export function RangeSelector({ duration, before, after, onChange, onScrub }: Pr
   const pct = (t: number) => `${duration > 0 ? (t / duration) * 100 : 0}%`
 
   const handles: { id: HandleId; time: number; label: string }[] = [
-    { id: 'before-start', time: before.start, label: '이전 구간 시작' },
-    { id: 'before-end', time: before.end, label: '이전 구간 끝' },
-    { id: 'after-start', time: after.start, label: '이후 구간 시작' },
-    { id: 'after-end', time: after.end, label: '이후 구간 끝' },
+    { id: 'before-start', time: before.start, label: '0.5 상태체크 구간 시작' },
+    { id: 'before-end', time: before.end, label: '0.5 상태체크 구간 끝' },
+    { id: 'after-start', time: after.start, label: '3. 마무리 구간 시작' },
+    { id: 'after-end', time: after.end, label: '3. 마무리 구간 끝' },
   ]
 
   return (
@@ -119,10 +119,10 @@ export function RangeSelector({ duration, before, after, onChange, onScrub }: Pr
       </div>
       <div className="range-readout">
         <span className="range-readout-before">
-          이전: {before.start.toFixed(2)}s – {before.end.toFixed(2)}s
+          0.5 상태체크: {before.start.toFixed(2)}s – {before.end.toFixed(2)}s
         </span>
         <span className="range-readout-after">
-          이후: {after.start.toFixed(2)}s – {after.end.toFixed(2)}s
+          3. 마무리: {after.start.toFixed(2)}s – {after.end.toFixed(2)}s
         </span>
       </div>
     </div>

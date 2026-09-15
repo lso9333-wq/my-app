@@ -1,8 +1,10 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import type { XmskFlowStage, XmskMeasurementValue, XmskRegionKey } from '../types'
 import { XMSK_INTENSITY_NOTE, XMSK_RECIPE_MAP } from '../lib/xmskRecipes'
 import { createXmskSession, XmskAuthError } from '../lib/xmskApi'
 import { ComparisonBarChart } from '../../../shared/components/ComparisonBarChart'
+import { PdfExportButton } from '../../../shared/components/PdfExportButton'
+import { PrintReportHeader } from '../../../shared/components/PrintReportHeader'
 
 type MeasureEntry = { value?: string; left?: string; right?: string }
 type MeasureState = Record<string, MeasureEntry>
@@ -26,6 +28,7 @@ interface Props {
 
 export function XmskRecipeFlow({ region, token, onExit, onSaved, onAuthError }: Props) {
   const recipe = XMSK_RECIPE_MAP[region]
+  const summaryRef = useRef<HTMLDivElement>(null)
   const [stage, setStage] = useState<XmskFlowStage>('redflag')
   const [clientName, setClientName] = useState('')
   const [trainerName, setTrainerName] = useState('')
@@ -317,26 +320,30 @@ export function XmskRecipeFlow({ region, token, onExit, onSaved, onAuthError }: 
 
       {stage === 'summary' && (
         <section className="xmsk-section">
-          <h3>결과 비교</h3>
-          {comparisonCharts.length > 0 ? (
-            <div className="chart-row xmsk-chart-row">{comparisonCharts}</div>
-          ) : (
-            <p className="metrics-empty">Before/After 측정값을 입력하면 비교 그래프가 표시됩니다.</p>
-          )}
+          <div ref={summaryRef}>
+            <PrintReportHeader title={`${recipe.title} — 결과 비교`} clientName={clientName} trainerName={trainerName} />
+            {comparisonCharts.length > 0 ? (
+              <div className="chart-row xmsk-chart-row">{comparisonCharts}</div>
+            ) : (
+              <p className="metrics-empty">Before/After 측정값을 입력하면 비교 그래프가 표시됩니다.</p>
+            )}
 
-          <div className="xmsk-closing">
-            <h4>마무리 멘트</h4>
-            <p>“{recipe.closingScript}”</p>
+            <div className="xmsk-closing">
+              <h4>마무리 멘트</h4>
+              <p>“{recipe.closingScript}”</p>
+            </div>
+
+            <div className="xmsk-selfcare">
+              <h4>셀프 과제</h4>
+              <ul className="xmsk-bullet-list">
+                {recipe.selfCare.map((c) => (
+                  <li key={c}>{c}</li>
+                ))}
+              </ul>
+            </div>
           </div>
 
-          <div className="xmsk-selfcare">
-            <h4>셀프 과제</h4>
-            <ul className="xmsk-bullet-list">
-              {recipe.selfCare.map((c) => (
-                <li key={c}>{c}</li>
-              ))}
-            </ul>
-          </div>
+          <PdfExportButton targetRef={summaryRef} fileName={`XMSK_${recipe.title}_${clientName || '결과'}`} />
 
           <label className="xmsk-note-field">
             메모 (선택)

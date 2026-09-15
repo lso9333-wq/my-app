@@ -1,6 +1,6 @@
 import './BottomNav.css'
 
-export type AppTab = 'home' | 'gait' | 'rom' | 'xmsk'
+export type AppTab = 'home' | 'gait' | 'rom' | 'handfoot' | 'xmsk' | 'eeg' | 'xcts'
 
 interface NavItem {
   key: AppTab
@@ -12,7 +12,10 @@ const NAV_ITEMS: NavItem[] = [
   { key: 'home', label: '홈', icon: '🏠' },
   { key: 'gait', label: '보행', icon: '🚶' },
   { key: 'rom', label: 'ROM', icon: '🤸' },
+  { key: 'handfoot', label: '손·발', icon: '✋' },
   { key: 'xmsk', label: 'XMSK', icon: '🩺' },
+  { key: 'eeg', label: '뇌파', icon: '🧠' },
+  { key: 'xcts', label: 'XCTS', icon: '❤️' },
 ]
 
 interface BottomNavProps {

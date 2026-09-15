@@ -1,4 +1,5 @@
 import type {
+  DataQualitySummary,
   XmskAuthResponse,
   XmskEvaluationCreateRequest,
   XmskEvaluationCreateResponse,
@@ -99,4 +100,9 @@ export async function getXmskEvaluation(token: string, id: number): Promise<Xmsk
 export async function deleteXmskEvaluation(token: string, id: number): Promise<void> {
   const res = await fetch(`${BASE}/evaluations/${id}`, { method: 'DELETE', headers: authHeaders(token) })
   return expectNoContent(res)
+}
+
+export async function getDataQualitySummary(token: string): Promise<DataQualitySummary> {
+  const res = await fetch(`${BASE}/data-quality`, { headers: authHeaders(token) })
+  return parseOrThrow(res)
 }

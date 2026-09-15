@@ -1,0 +1,396 @@
+.hero {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.hero-topbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hero-signal {
+  display: flex;
+  color: var(--accent);
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 70%, transparent));
+}
+
+.hero-signal-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.hero-logo {
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 20px;
+  align-items: center;
+}
+
+.hero-art {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  cursor: pointer;
+}
+
+/* 2026-09: 일러스트가 이제 클릭 가능한 전/후 비교 토글이라, 키보드 포커스 표시를
+   추가한다(role="button"이라 실제 <button>과 동일하게 탭 이동/Enter·Space로
+   조작 가능해야 함). */
+.hero-art:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 6px;
+  border-radius: 20px;
+}
+
+.hero-art-glow {
+  position: absolute;
+  inset: -10%;
+  background: radial-gradient(
+    circle at 50% 40%,
+    color-mix(in srgb, var(--accent) 35%, transparent),
+    transparent 70%
+  );
+  filter: blur(4px);
+  z-index: 0;
+}
+
+/* Grok Bot Radar류 홍보 이미지의 손글씨 스타일 문구를 참고한 장식 텍스트.
+   일반 흐름을 차지하지 않도록 hero-art 위에 절대 위치로 얹습니다. */
+.hero-handwritten {
+  position: absolute;
+  top: -6px;
+  right: -4px;
+  z-index: 3;
+  font-family: 'Gaegu', 'Nanum Pen Script', cursive;
+  font-size: 15px;
+  color: var(--series-right);
+  transform: rotate(-6deg);
+  text-decoration: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: color-mix(in srgb, var(--series-right) 70%, transparent);
+  text-underline-offset: 3px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.hero-figure {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 180px;
+  height: auto;
+  transform-origin: 50% 90%;
+  animation: heroFigureSway 3.6s ease-in-out infinite;
+}
+
+/* "실제 인체가 움직이는 모습"처럼 보이도록 미세하게 계속 흔들리는 아이들 모션.
+   각도를 아주 작게(최대 1.6deg) 둬서 산만하지 않게 한다. */
+@keyframes heroFigureSway {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(1.6deg);
+  }
+}
+
+.hero-figure-lines line {
+  stroke: var(--text-dim);
+  stroke-width: 9;
+  stroke-linecap: round;
+}
+
+/* 얇은 뼈대선만으로는 "실제 몸"처럼 보이지 않아서, 몸통 부분에 은은한 채움을
+   더해 실루엣처럼 보이게 한다(2026-09). */
+.hero-body-fill {
+  fill: color-mix(in srgb, var(--text-dim) 22%, transparent);
+}
+
+.joint {
+  fill: var(--text);
+}
+
+.joint-left circle {
+  fill: var(--series-left);
+}
+
+.joint-right circle {
+  fill: var(--series-right);
+}
+
+/* 포즈 인식 점이 실제로 지금 관절을 찍고 있는 것처럼 은은하게 깜빡인다. */
+.joint circle,
+circle.joint {
+  animation: heroJointPulse 2.2s ease-in-out infinite;
+}
+
+@keyframes heroJointPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* 골반 중심(100,140 = 뷰박스 200x260 기준 50%, 53.85%)을 축으로 상체 전체(머리·
+   목·어깨·양팔·몸통 채움)를 회전시켜 "허리 굽히기" 전/후를 표현한다. 클릭 상태
+   (.after)에서 골반을 축으로 상체가 앞으로 굽는다 — 실제 ROM 기능이 스트레칭
+   전/후 각도 변화를 재는 것과 같은 개념을 일러스트로 보여주는 것. 다리는 이
+   그룹 밖에 고정돼 있어 발이 그대로 딛고 있는 것처럼 보인다. */
+.hero-bend-toggle {
+  /* transform-origin의 %는 기본적으로 이 <g> 자신의 바운딩 박스 기준이라, 뷰박스
+     (0 0 200 260) 좌표인 골반 위치(100,140 → 50%, 53.85%)를 그대로 쓰려면
+     transform-box를 view-box로 바꿔줘야 한다 — 안 그러면 상체 자체의 바운딩
+     박스를 기준으로 회전해서 엉뚱한 위치로 튄다. */
+  transform-box: view-box;
+  transform-origin: 50% 53.85%;
+  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.hero-bend-toggle.after {
+  transform: rotate(-45deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-figure {
+    animation: none;
+  }
+
+  .joint circle,
+  circle.joint {
+    animation: none;
+  }
+
+  .hero-bend-toggle {
+    transition: none;
+  }
+}
+
+.hero-chip {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.hero-chip-1 {
+  top: 6%;
+  left: 2%;
+}
+
+.hero-chip-2 {
+  bottom: 10%;
+  right: 0%;
+}
+
+.hero-chip-label {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.hero-chip-value {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.hero-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.hero-title {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.hero-feature-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hero-feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.hero-feature-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  font-size: 16px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+
+.hero-feature-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hero-feature-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.hero-feature-desc {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-dim);
+}
+
+.hero-cta {
+  align-self: flex-start;
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+  border: none;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 12px 22px;
+  border-radius: 999px;
+}
+
+.hero-cta:hover {
+  background: linear-gradient(90deg, var(--accent-hover), var(--accent-hover));
+}
+
+.hero-trust {
+  margin: 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-dim);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+
+/* 모바일 화면에서 히어로를 한 화면에 담기 위한 축소 스타일.
+   반드시 위의 기본 규칙들보다 뒤에 와야 우선순위(소스 순서)로 실제 적용됩니다. */
+@media (max-width: 560px) {
+  .hero {
+    gap: 6px;
+  }
+
+  .hero-logo {
+    font-size: 13px;
+  }
+
+  .hero-signal-icon {
+    width: 15px;
+    height: 15px;
+  }
+
+  .hero-grid {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .hero-art {
+    min-height: 90px;
+    /* 스켈레톤을 중앙 대신 왼쪽으로 붙여, 오른쪽 칩과 자연스럽게 분리되도록 합니다. */
+    justify-content: flex-start;
+  }
+
+  .hero-handwritten {
+    top: -4px;
+    right: 4px;
+    font-size: 12px;
+  }
+
+  .hero-figure {
+    max-width: 78px;
+  }
+
+  /* 칩 2개가 화면 양 끝까지 퍼져 보이지 않도록 안쪽으로 당겨줍니다
+     (hero-art 자체 너비는 건드리지 않아 일러스트가 사라지는 문제를 피합니다). */
+  .hero-chip-1 {
+    top: auto;
+    bottom: 4px;
+    left: 24%;
+  }
+
+  .hero-chip-2 {
+    right: 10%;
+  }
+
+  .hero-chip {
+    padding: 5px 8px;
+    border-radius: 9px;
+  }
+
+  .hero-chip-label {
+    font-size: 9px;
+  }
+
+  .hero-chip-value {
+    font-size: 12px;
+  }
+
+  .hero-copy {
+    gap: 8px;
+  }
+
+  .hero-title {
+    font-size: 19px;
+    line-height: 1.2;
+  }
+
+  /* PC와 동일하게 아이콘+제목+설명이 있는 세로 목록을 그대로 유지하되,
+     좁은 화면에 맞게 크기만 살짝 줄입니다. */
+  .hero-feature-list {
+    gap: 8px;
+  }
+
+  .hero-feature-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+  }
+
+  .hero-feature-title {
+    font-size: 13px;
+  }
+
+  .hero-feature-desc {
+    font-size: 11px;
+  }
+
+  .hero-trust {
+    font-size: 10px;
+    padding: 5px 8px;
+  }
+}
