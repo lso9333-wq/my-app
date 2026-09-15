@@ -34,7 +34,7 @@ async function fetchHomeSummary(): Promise<HomeSummary> {
   return res.json();
 }
 
-export function HomeScreen({ onNavigate, onOpenInfo }: HomeScreenProps) {
+export function HomeScreen({ onNavigate: _onNavigate, onOpenInfo }: HomeScreenProps) {
   const [summary, setSummary] = useState<HomeSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
 
