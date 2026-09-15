@@ -1,4 +1,5 @@
-import { Dispatch, SetStateAction, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 
 // 실제 API 클라이언트, 타입 위치에 맞춰 import 경로 조정 필요.
 // server/routes에 /api/home-summary 같은 엔드포인트가 있다고 가정한 draft.
