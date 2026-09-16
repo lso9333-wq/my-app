@@ -2,6 +2,8 @@ import { DatabaseSync } from 'node:sqlite'
 import { mkdirSync } from 'node:fs'
 import path from 'node:path'
 import type {
+  EegSessionCreateRequest,
+  EegSessionRow,
   FootSessionCreateRequest,
   FootSessionRow,
   GaitDiagnosticCreateRequest,
@@ -647,6 +649,75 @@ const deleteXctsStmt = db.prepare(`DELETE FROM xcts_sessions WHERE id = ?`)
 
 export function deleteXctsSession(id: number): boolean {
   return Number(deleteXctsStmt.run(id).changes) > 0
+}
+
+// ============================================================
+// 뇌파(EEG) 세션 (eeg_sessions)
+// ============================================================
+// 2026-09 추가 — 원래 EEG는 서버 저장이 전혀 없는 100% 클라이언트 전용 기능이었으나,
+// XCTS와 같은 방식으로 회원별 기록을 남기고 싶다는 요청에 따라 추가한다. XCTS와 같은
+// 이유로 requireAuth로 보호한다(routes/eegSessions.ts 참고, App.tsx GATED_TABS에도 추가됨).
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS eeg_sessions (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    created_at       TEXT NOT NULL,
+    client_name      TEXT NOT NULL,
+    trainer_name     TEXT,
+    device_name      TEXT,
+    band_powers_json TEXT NOT NULL,
+    note             TEXT
+  )
+`)
+
+const insertEegStmt = db.prepare(`
+  INSERT INTO eeg_sessions
+    (created_at, client_name, trainer_name, device_name, band_powers_json, note)
+  VALUES (?, ?, ?, ?, ?, ?)
+`)
+
+const EEG_SELECT_COLUMNS = `
+  id, created_at, client_name, trainer_name, device_name, band_powers_json, note
+`
+
+const listEegStmt = db.prepare(`
+  SELECT ${EEG_SELECT_COLUMNS}
+  FROM eeg_sessions
+  ORDER BY id DESC
+  LIMIT ?
+`)
+
+const getEegStmt = db.prepare(`
+  SELECT ${EEG_SELECT_COLUMNS}
+  FROM eeg_sessions
+  WHERE id = ?
+`)
+
+export function insertEegSession(req: EegSessionCreateRequest): { id: number; createdAt: string } {
+  const createdAt = new Date().toISOString()
+  const result = insertEegStmt.run(
+    createdAt,
+    req.clientName,
+    req.trainerName ?? null,
+    req.deviceName ?? null,
+    JSON.stringify(req.bandPowers),
+    req.note ?? null,
+  )
+  return { id: Number(result.lastInsertRowid), createdAt }
+}
+
+export function listEegSessions(limit: number): EegSessionRow[] {
+  return listEegStmt.all(limit) as unknown as EegSessionRow[]
+}
+
+export function getEegSession(id: number): EegSessionRow | undefined {
+  return getEegStmt.get(id) as unknown as EegSessionRow | undefined
+}
+
+const deleteEegStmt = db.prepare(`DELETE FROM eeg_sessions WHERE id = ?`)
+
+export function deleteEegSession(id: number): boolean {
+  return Number(deleteEegStmt.run(id).changes) > 0
 }
 
 // ============================================================

@@ -278,6 +278,32 @@ export interface EegContextUpdateRequest {
 }
 
 /**
+ * 뇌파(EEG) 실시간 표시 기록 저장 — 2026-09 추가. 원래 이 기능은 서버에 아무것도
+ * 저장하지 않는 100% 클라이언트 전용이었으나(src/features/eeg/types.ts 옛 주석 참고),
+ * XCTS와 같은 식으로 "회원별 기록"을 남기고 싶다는 요청에 따라 XctsSessionCreateRequest와
+ * 같은 패턴으로 추가한다. 손·발의 EegHandFootContext(baseline/during 비교, 채널별
+ * 세부 breakdown)보다 가벼운 형태로 둔다 — 여기서는 화면에 실시간으로 보여주는 것과
+ * 같은 4채널 평균 대역 파워(EegBandPowers) 스냅샷 하나만 저장한다.
+ */
+export interface EegSessionCreateRequest {
+  clientName: string
+  trainerName?: string
+  deviceName: string | null
+  bandPowers: EegBandPowers
+  note?: string
+}
+
+export interface EegSessionRow {
+  id: number
+  created_at: string
+  client_name: string
+  trainer_name: string | null
+  device_name: string | null
+  band_powers_json: string
+  note: string | null
+}
+
+/**
  * 손가락 관절(HandJointResult)은 이미 실제 랜드마크로 직접 계산한 값이라, 발가락
  * 마디별 시뮬레이션(FootManualToeInput)과 달리 ROM의 RomXmskGroundTruth와 같은
  * 성격의 "AI 계산 vs 트레이너 실측" 정답값을 붙인다. id는 `${side}_${joint}`

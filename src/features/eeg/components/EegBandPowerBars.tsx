@@ -9,6 +9,9 @@ import type { EegBandPowers } from '../../../shared/lib/eeg/types'
 interface Props {
   buffersRef: RefObject<EegBuffers | null>
   running: boolean
+  /** 2026-09 추가 — EegApp의 "기록 저장" 버튼이 지금 화면에 보이는 값을 그대로 저장할
+   * 수 있도록, 계산될 때마다 최신 평균 대역 파워를 부모로 올려보낸다. */
+  onPowersUpdate?: (powers: EegBandPowers) => void
 }
 
 const UPDATE_INTERVAL_MS = 500
@@ -17,7 +20,7 @@ const UPDATE_INTERVAL_MS = 500
  * 4채널 평균을 막대로 보여준다. 매 프레임(rAF)이 아니라 setInterval로 0.5초마다만
  * 다시 계산한다 — FFT는 파형 그리기보다 계산량이 있고, 대역 파워는 눈으로 볼 때
  * 60fps로 갱신될 필요가 없기 때문(파형 자체의 부드러운 스크롤과는 다른 요구사항). */
-export function EegBandPowerBars({ buffersRef, running }: Props) {
+export function EegBandPowerBars({ buffersRef, running, onPowersUpdate }: Props) {
   const [powers, setPowers] = useState<EegBandPowers | null>(null)
 
   useEffect(() => {
@@ -43,9 +46,10 @@ export function EegBandPowerBars({ buffersRef, running }: Props) {
         averaged[band.key] = sum / perChannel.length
       }
       setPowers(averaged)
+      onPowersUpdate?.(averaged)
     }, UPDATE_INTERVAL_MS)
     return () => window.clearInterval(timer)
-  }, [running, buffersRef])
+  }, [running, buffersRef, onPowersUpdate])
 
   if (!powers) {
     return <p className="app-subtitle">대역 파워 계산 중 — 연결 후 1초 이상 기다려 주세요.</p>

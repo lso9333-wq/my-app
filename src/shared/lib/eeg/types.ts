@@ -1,8 +1,10 @@
 // 뇌파(EEG) 실시간 표시 기능의 타입 정의.
 //
-// 이 기능은 이 앱의 다른 6개 기능(보행/ROM/손발/XMSK 등)과 달리 서버에 아무것도
-// 저장하지 않는다 — 100% 클라이언트(브라우저) 안에서만 동작한다. 이유는 CLAUDE.md의
-// "뇌파(EEG) 실시간 표시" 절 참고. 그래서 여기엔 서버 API 타입이 없다.
+// 2026-09 추가: 원래 이 기능은 서버에 아무것도 저장하지 않는 100% 클라이언트 전용이었다
+// (CLAUDE.md "뇌파(EEG) 실시간 표시" 절 참고). 이후 XCTS와 같은 방식으로 회원별 기록을
+// 남기고 싶다는 요청에 따라 세션 저장 API 타입(EegSessionCreateRequest 등)을 추가했다 —
+// 실시간 파형/버퍼 자체는 여전히 서버로 전송하지 않고, "기록 저장" 버튼을 눌렀을 때의
+// 대역 파워 스냅샷 하나만 회원 이름과 함께 저장한다.
 
 /** muse-js가 실제로 내보내는 채널 이름과 같은 순서 — TP9/AF7/AF8/TP10은 뇌파 전극,
  * AUX는 사용자가 추가로 연결할 수 있는 보조 전극(Muse 2/S 기본 구성엔 없음). */
@@ -40,3 +42,29 @@ export interface EegConnectionInfo {
 }
 
 export type EegConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error'
+
+export interface EegSessionCreateRequest {
+  clientName: string
+  trainerName?: string
+  deviceName: string | null
+  bandPowers: EegBandPowers
+  note?: string
+}
+
+export interface EegSessionCreateResponse {
+  id: number
+  createdAt: string
+}
+
+export interface EegSessionListItem {
+  id: number
+  createdAt: string
+  clientName: string
+  trainerName: string | null
+  deviceName: string | null
+  bandPowers: EegBandPowers
+}
+
+export interface EegSessionDetail extends EegSessionListItem {
+  note: string | null
+}

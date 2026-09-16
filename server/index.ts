@@ -1,6 +1,7 @@
 import express from 'express'
 import path from 'node:path'
 import { authRouter } from './routes/auth.js'
+import { eegSessionsRouter } from './routes/eegSessions.js'
 import { footSessionsRouter } from './routes/footSessions.js'
 import { gaitDiagnosticsRouter } from './routes/gaitDiagnostics.js'
 import { handSessionsRouter } from './routes/handSessions.js'
@@ -21,6 +22,7 @@ app.use('/api/gait-diagnostics', gaitDiagnosticsRouter)
 app.use('/api/hand-sessions', handSessionsRouter)
 app.use('/api/foot-sessions', footSessionsRouter)
 app.use('/api/xcts-sessions', xctsSessionsRouter)
+app.use('/api/eeg-sessions', eegSessionsRouter)
 app.use('/api/home-summary', homeSummaryRouter)
 
 app.use(express.static(DIST_DIR))

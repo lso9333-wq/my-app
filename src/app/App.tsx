@@ -23,7 +23,7 @@ const TAB_TITLES: Record<AppTab, string> = {
   xcts: 'XCTS',
 }
 
-// 로그인(비밀번호 잠금)이 필요한 탭 — 트레이너 전용 도구인 보행/ROM/손발/XMSK/XCTS 5개.
+// 로그인(비밀번호 잠금)이 필요한 탭 — 트레이너 전용 도구인 보행/ROM/손발/XMSK/XCTS/뇌파 6개.
 //
 // 2026-09 보안 점검(사용자 질문 "지금까지 작업에 대한 보안은 철저하게 되는거야?")에서
 // 이 4개 탭의 서버 API에 인증이 전혀 없다는 게 드러나(회원 이름이 담긴 기록을 누구나
@@ -32,15 +32,18 @@ const TAB_TITLES: Record<AppTab, string> = {
 // 여기 App.tsx가 최상위에서 하나로 관리한다 — 그래야 한 탭에서 토큰이 만료돼도(401)
 // 다른 탭들도 같이 잠금 화면으로 돌아간다(onAuthError → handleLock).
 //
-// 홈과 뇌파(EEG)는 로그인 없이 누구나 볼 수 있어야 하는 화면이라 뺐다 — 홈은 랜딩
-// 화면이고, 뇌파는 서버에 아무것도 저장하지 않는 100% 클라이언트 전용 기능이라
-// 애초에 보호할 회원 개인정보가 서버에 없다(EegApp.tsx 상단 주석 참고).
+// 홈은 로그인 없이 누구나 볼 수 있어야 하는 랜딩 화면이라 뺐다.
 //
 // 2026-09 추가: XCTS(심혈관/전신 컨디션 측정 도구 모음)도 회원 이름이 담긴 기록을
 // 서버에 저장하므로 같은 이유로 여기에 포함한다 — 별도 비밀번호를 새로 만들지 않고
 // 이미 있는 앱 전체 로그인을 그대로 재사용한다(트레이너 도구마다 다른 비밀번호를
 // 두지 않는다는 원래 결정과 같은 이유).
-const GATED_TABS: ReadonlySet<AppTab> = new Set(['gait', 'rom', 'handfoot', 'xmsk', 'xcts'])
+//
+// 2026-09 추가: 뇌파(EEG)도 원래는 100% 클라이언트 전용이라 로그인 없이 뒀지만
+// ("서버에 저장할 회원 개인정보가 없다"는 게 이유였음 — EegApp.tsx 상단 주석 참고),
+// XCTS처럼 회원별 기록을 저장하는 기능이 추가되면서 그 전제가 깨졌다. 같은 이유로
+// 여기에 포함한다.
+const GATED_TABS: ReadonlySet<AppTab> = new Set(['gait', 'rom', 'handfoot', 'xmsk', 'xcts', 'eeg'])
 
 function App() {
   const [tab, setTab] = useState<AppTab>('home')
@@ -97,7 +100,7 @@ function App() {
         {!needsGate && tab === 'handfoot' && <HandFootApp token={token!} onAuthError={handleLock} />}
         {!needsGate && tab === 'xmsk' && <XmskApp token={token!} onLock={handleLock} />}
         {!needsGate && tab === 'xcts' && <XctsApp token={token!} onAuthError={handleLock} />}
-        {tab === 'eeg' && <EegApp />}
+        {!needsGate && tab === 'eeg' && <EegApp token={token!} onAuthError={handleLock} />}
       </main>
 
       {!isHome && (
