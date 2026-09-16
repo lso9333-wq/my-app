@@ -1,15 +1,11 @@
 import { useEffect, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
+import type { AppTab } from '../../navigation/BottomNav';
+import type { InfoKey } from '../../app/legalContent';
 
-// 실제 API 클라이언트, 타입 위치에 맞춰 import 경로 조정 필요.
-// server/routes에 /api/home-summary 같은 엔드포인트가 있다고 가정한 draft.
-
-// App.tsx가 실제로 쓰는 AppTab / InfoKey 타입을 아직 확인하지 못해 any로 받는다.
-// App.tsx에서 이 타입들을 export하고 있다면 아래 두 줄을 지우고
-// import { AppTab, InfoKey } from '../../app/App'; 같은 형태로 바꿔 좁혀주는 게 좋다.
 interface HomeScreenProps {
-  onNavigate: (next: any) => void;
-  onOpenInfo: Dispatch<SetStateAction<any>>;
+  onNavigate: (next: AppTab) => void;
+  onOpenInfo: Dispatch<SetStateAction<InfoKey | null>>;
 }
 
 interface HomeSummary {
@@ -34,7 +30,7 @@ async function fetchHomeSummary(): Promise<HomeSummary> {
   return res.json();
 }
 
-export function HomeScreen({ onNavigate: _onNavigate, onOpenInfo }: HomeScreenProps) {
+export function HomeScreen({ onNavigate, onOpenInfo: _onOpenInfo }: HomeScreenProps) {
   const [summary, setSummary] = useState<HomeSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,12 +55,7 @@ export function HomeScreen({ onNavigate: _onNavigate, onOpenInfo }: HomeScreenPr
           <p className="home-greeting">좋은 아침이에요</p>
           <p className="home-username">{summary.userName}님</p>
         </div>
-        <button
-          type="button"
-          className="home-notify-button"
-          aria-label="알림"
-          onClick={() => onOpenInfo('notifications')}
-        >
+        <button type="button" className="home-notify-button" aria-label="알림" disabled>
           🔔
         </button>
       </header>
@@ -95,13 +86,10 @@ export function HomeScreen({ onNavigate: _onNavigate, onOpenInfo }: HomeScreenPr
         <p className="coach-text">{summary.coachMessage}</p>
       </section>
 
-      {/*
-        실제 배포된 App.tsx의 AppTab 값을 확인하지 못해(로컬 src/App.tsx가 라이브 dist와
-        내용이 달라 신뢰할 수 없는 상태) 존재 여부를 모르는 탭으로 이동시키지 않도록
-        일단 onClick을 비워둠. 실제 AppTab 값이 확인되면 onNavigate(...)로 연결할 것.
-      */}
-      <button type="button" className="checkin-button" disabled>
-        오늘의 체크인 시작하기 (준비 중)
+      {/* 코드베이스 관례상 HomeScreen의 기본 CTA는 rom 탭으로 연결한다
+          (EegApp.tsx 등 여러 곳 주석에 언급된 "예외는 HomeScreen→rom 하나" 참고). */}
+      <button type="button" className="checkin-button" onClick={() => onNavigate('rom')}>
+        오늘의 체크인 시작하기
       </button>
     </div>
   );
