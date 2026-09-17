@@ -18,6 +18,15 @@ export async function saveHealthMetric(token: string, metricType: HealthMetricTy
   await parseAuthAwareJson(res)
 }
 
+export async function saveCoachMessage(token: string, message: string): Promise<void> {
+  const res = await fetch('/api/home-summary/coach-message', {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify({ message }),
+  })
+  await parseAuthAwareJson(res)
+}
+
 export async function fetchRecentActivity(token: string): Promise<RecentActivityItem[]> {
   const res = await fetch('/api/home-summary/recent-activity', { headers: authHeaders(token) })
   const data = await parseAuthAwareJson<{ items: RecentActivityItem[] }>(res)

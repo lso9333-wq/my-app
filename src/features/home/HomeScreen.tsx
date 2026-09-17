@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import type { AppTab } from '../../navigation/BottomNav';
 import type { InfoKey } from '../../app/legalContent';
-import { saveHealthMetric, fetchRecentActivity, type RecentActivityItem } from './lib/homeApi';
+import { saveHealthMetric, saveCoachMessage, fetchRecentActivity, type RecentActivityItem } from './lib/homeApi';
 import { AuthError } from '../../shared/lib/authApi';
 
 interface HomeScreenProps {
@@ -59,6 +59,10 @@ export function HomeScreen({ onNavigate, onOpenInfo: _onOpenInfo, token }: HomeS
   const [activity, setActivity] = useState<RecentActivityItem[] | null>(null);
   const [activityError, setActivityError] = useState<string | null>(null);
 
+  const [coachInput, setCoachInput] = useState('');
+  const [coachSaveState, setCoachSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [coachSaveError, setCoachSaveError] = useState<string | null>(null);
+
   useEffect(() => {
     fetchHomeSummary()
       .then(setSummary)
@@ -114,6 +118,20 @@ export function HomeScreen({ onNavigate, onOpenInfo: _onOpenInfo, token }: HomeS
     }
   };
 
+  const handleSaveCoachMessage = async () => {
+    if (!token || coachInput.trim() === '') return;
+    setCoachSaveState('saving');
+    try {
+      await saveCoachMessage(token, coachInput.trim());
+      setCoachSaveState('saved');
+      setCoachInput('');
+      refreshSummary();
+    } catch (err) {
+      setCoachSaveState('error');
+      setCoachSaveError(err instanceof Error ? err.message : '저장에 실패했어요.');
+    }
+  };
+
   if (error) {
     return <div className="home-error">{error}</div>;
   }
@@ -159,6 +177,31 @@ export function HomeScreen({ onNavigate, onOpenInfo: _onOpenInfo, token }: HomeS
         <p className="coach-name">{summary.coachName}</p>
         <p className="coach-text">{summary.coachMessage}</p>
       </section>
+
+      {token && (
+        <section className="metric-card">
+          <p className="priority-label">코치 멘트 수정</p>
+          <label>
+            새 멘트 (200자 이내)
+            <input
+              type="text"
+              value={coachInput}
+              onChange={(e) => setCoachInput(e.target.value)}
+              placeholder="예: 오늘도 꾸준히 관리해봐요!"
+              maxLength={200}
+            />
+          </label>
+          <button
+            type="button"
+            onClick={handleSaveCoachMessage}
+            disabled={coachSaveState === 'saving' || coachInput.trim() === ''}
+          >
+            {coachSaveState === 'saving' ? '저장 중...' : '멘트 저장'}
+          </button>
+          {coachSaveState === 'saved' && <p className="priority-comment">저장했어요.</p>}
+          {coachSaveState === 'error' && <p className="priority-comment">저장 실패: {coachSaveError}</p>}
+        </section>
+      )}
 
       {token && (
         <section className="metric-card">

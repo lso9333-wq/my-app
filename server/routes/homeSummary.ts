@@ -4,6 +4,7 @@ import {
   getRecentMetrics,
   getLatestCoachMessage,
   insertHealthMetric,
+  insertCoachMessage,
   listSessions,
   listXctsSessions,
   listGaitDiagnostics,
@@ -78,6 +79,27 @@ homeSummaryRouter.post('/metrics', requireAuth, (req: Request, res: Response) =>
     return
   }
   insertHealthMetric(metricType, value, 'manual')
+  res.status(201).json({ ok: true })
+})
+
+/**
+ * 홈 화면 코치 멘트("닥터메이트" 말풍선)를 직접 입력하는 엔드포인트. 2026-09 추가
+ * — 그전까지는 insertCoachMessage 함수만 db.ts에 있고 호출하는 곳이 없어서
+ * 항상 하드코딩된 기본 문구("오늘도 좋은 하루 보내세요.")만 나왔다. 홈은
+ * 비로그인 공개 화면이라, 아무나 이 멘트를 낙서처럼 바꿔버리지 못하게
+ * requireAuth를 건다(수치 입력과 같은 이유).
+ */
+homeSummaryRouter.post('/coach-message', requireAuth, (req: Request, res: Response) => {
+  const { message } = req.body as { message?: unknown }
+  if (typeof message !== 'string' || message.trim() === '') {
+    res.status(400).json({ error: 'message가 올바르지 않습니다.' })
+    return
+  }
+  if (message.length > 200) {
+    res.status(400).json({ error: '메시지는 200자 이내로 입력해주세요.' })
+    return
+  }
+  insertCoachMessage('manual', message.trim())
   res.status(201).json({ ok: true })
 })
 
