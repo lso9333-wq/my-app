@@ -92,7 +92,12 @@ function App() {
 
       <main className="app-content">
         {tab === 'home' && (
-          <HomeScreen key={homeResetKey} onNavigate={handleTabChange} onOpenInfo={setActiveInfo} />
+          <HomeScreen
+            key={homeResetKey}
+            onNavigate={handleTabChange}
+            onOpenInfo={setActiveInfo}
+            token={token ?? undefined}
+          />
         )}
         {needsGate && <AppPasswordGate onUnlock={handleUnlock} />}
         {!needsGate && tab === 'gait' && <GaitApp token={token!} onAuthError={handleLock} />}
