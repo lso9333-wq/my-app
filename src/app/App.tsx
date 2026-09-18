@@ -97,6 +97,7 @@ function App() {
             onNavigate={handleTabChange}
             onOpenInfo={setActiveInfo}
             token={token ?? undefined}
+            onAuthError={handleLock}
           />
         )}
         {needsGate && <AppPasswordGate onUnlock={handleUnlock} />}

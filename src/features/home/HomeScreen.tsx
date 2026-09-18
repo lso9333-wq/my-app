@@ -12,6 +12,9 @@ interface HomeScreenProps {
    * 포함) 목록을 보여주기 위해 App.tsx에서 전달받는다. home은 원래 비로그인
    * 탭이라 로그인 전엔 undefined다. */
   token?: string;
+  /** 다른 탭들의 onAuthError와 같은 패턴 — 토큰 만료(401) 시 App.tsx의
+   * handleLock을 호출해 실제로 로그아웃 처리하고 비밀번호 화면으로 되돌린다. */
+  onAuthError: () => void;
 }
 
 interface HomeSummary {
@@ -45,7 +48,7 @@ const ACTIVITY_TYPE_LABEL: Record<string, string> = {
   eeg: '뇌파',
 };
 
-export function HomeScreen({ onNavigate, onOpenInfo: _onOpenInfo, token }: HomeScreenProps) {
+export function HomeScreen({ onNavigate, onOpenInfo: _onOpenInfo, token, onAuthError }: HomeScreenProps) {
   const [summary, setSummary] = useState<HomeSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -77,10 +80,13 @@ export function HomeScreen({ onNavigate, onOpenInfo: _onOpenInfo, token }: HomeS
     fetchRecentActivity(token)
       .then(setActivity)
       .catch((err) => {
-        if (err instanceof AuthError) return; // 토큰 만료 시 조용히 무시(App.tsx가 곧 잠금 화면으로 되돌림)
+        if (err instanceof AuthError) {
+          onAuthError(); // 토큰 만료 → 실제로 로그아웃 처리하고 비밀번호 화면으로 되돌린다
+          return;
+        }
         setActivityError('최근 기록을 불러오지 못했어요.');
       });
-  }, [token]);
+  }, [token, onAuthError]);
 
   const refreshSummary = () => {
     fetchHomeSummary()

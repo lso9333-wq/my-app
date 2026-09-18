@@ -226,6 +226,21 @@ else
   echo "── git 커밋 완료: \$(git log -1 --oneline)"
 fi
 
+# VM의 git 커밋이 로컬(예: ~/my-app-real)의 GitHub master 클론과 어긋나지 않도록,
+# 커밋 여부와 무관하게(이전 실행에서 커밋만 되고 push가 안 남아있을 수도 있으므로)
+# 매번 push를 시도한다. origin이 없으면(예전 VM-로컬-전용 저장소) 건너뛴다. push
+# 실패는 배포 자체(docker compose)를 막지 않되, 눈에 띄게 경고한다 — 조용히
+# 무시하면 이번에 잡은 것과 같은 종류의 어긋남이 다시 재발할 수 있다.
+if git remote get-url origin >/dev/null 2>&1; then
+  if git push origin master; then
+    echo "── git push 완료 (GitHub master와 동기화됨)"
+  else
+    echo "⚠️  git push 실패 — VM의 git 이력이 GitHub master와 어긋난 상태로 남았습니다. 수동으로 확인/push하세요." >&2
+  fi
+else
+  echo "── (git: origin 리모트가 없어 push를 건너뜁니다)"
+fi
+
 docker compose build && docker compose up -d
 EOF
 
