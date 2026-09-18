@@ -1,8 +1,25 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import type { NextFunction, Request, Response } from 'express'
 
-const SECRET = process.env.XMSK_SECRET ?? 'foreSTRETCH-xmsk-dev-secret'
-const PASSWORD = process.env.XMSK_PASSWORD ?? 'forestretch1'
+/**
+ * XMSK_SECRET/XMSK_PASSWORD는 예전에 개발용 기본값(하드코딩된 fallback)이 있었으나,
+ * 2026-09 보안 점검에서 운영 환경에 그 기본값이 그대로 배포될 위험이 있다고 판단해
+ * 제거했다 — 환경변수가 없으면 fallback으로 조용히 넘어가는 대신, 여기서 즉시 에러를
+ * 던져 서버 시작 자체를 막는다(모듈 로드 시점에 실행되므로 라우터가 마운트되기도
+ * 전에 프로세스가 죽는다). `.env.example`을 참고해 반드시 값을 설정할 것.
+ */
+function requireEnv(name: 'XMSK_SECRET' | 'XMSK_PASSWORD'): string {
+  const value = process.env[name]
+  if (!value) {
+    throw new Error(
+      `환경변수 ${name}가 설정되지 않았습니다. 보안을 위해 기본값(fallback)을 제공하지 않으므로, 서버를 시작하려면 이 값을 반드시 설정해야 합니다. (.env.example 참고)`
+    )
+  }
+  return value
+}
+
+const SECRET = requireEnv('XMSK_SECRET')
+const PASSWORD = requireEnv('XMSK_PASSWORD')
 const TOKEN_TTL_MS = 12 * 60 * 60 * 1000
 
 function sign(payload: string): string {
