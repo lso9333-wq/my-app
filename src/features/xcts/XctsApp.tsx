@@ -4,10 +4,10 @@ import { XctsResultsPanel } from './components/XctsResultsPanel'
 import { XctsSessionHistory } from './components/XctsSessionHistory'
 import { createXctsSession } from './lib/xctsApi'
 import { AuthError } from '../../shared/lib/authApi'
-import type { HeartRateWindowSummary, XctsModule } from './types'
+import type { HeartRateWindowSummary, XctsMeasurementSource, XctsModule } from './types'
 
 const MODULE_DESCRIPTIONS: Record<XctsModule, string> = {
-  heartRate: '표준 BLE 심박 센서를 연결해 활동 전/후 심박수·HRV 변화를 측정합니다.',
+  heartRate: '표준 BLE 심박 센서를 연결하거나 삼성 헬스 CSV를 업로드해 활동 전/후 심박수·HRV 변화를 측정합니다.',
 }
 
 interface Props {
@@ -28,6 +28,10 @@ interface Props {
 function XctsApp({ token, onAuthError }: Props) {
   const [xctsModule] = useState<XctsModule>('heartRate')
   const [deviceName, setDeviceName] = useState<string | null>(null)
+  // 세션 저장 시 deviceSource로 실려 보낼 값 — BLE/CSV 중 가장 최근에 값을 채운
+  // 쪽으로 갱신된다(한 세션 안에서 소스를 섞어 쓰는 경우는 지원하지 않고, "이 세션은
+  // 이 방식으로 측정했다"는 단순한 라벨로만 쓴다).
+  const [deviceSource, setDeviceSource] = useState<XctsMeasurementSource>('ble-heart-rate')
   const [baseline, setBaseline] = useState<HeartRateWindowSummary | null>(null)
   const [post, setPost] = useState<HeartRateWindowSummary | null>(null)
   const [clientName, setClientName] = useState('')
@@ -36,9 +40,14 @@ function XctsApp({ token, onAuthError }: Props) {
   const [saveError, setSaveError] = useState<string | null>(null)
   const [historyKey, setHistoryKey] = useState(0)
 
-  const handleCaptured = (phase: 'baseline' | 'post', summary: HeartRateWindowSummary) => {
+  const handleCaptured = (
+    phase: 'baseline' | 'post',
+    summary: HeartRateWindowSummary,
+    source: XctsMeasurementSource,
+  ) => {
     if (phase === 'baseline') setBaseline(summary)
     else setPost(summary)
+    setDeviceSource(source)
   }
 
   const canSave = clientName.trim() !== '' && (baseline !== null || post !== null)
@@ -50,7 +59,7 @@ function XctsApp({ token, onAuthError }: Props) {
       await createXctsSession(token, {
         clientName: clientName.trim(),
         trainerName: trainerName.trim() || undefined,
-        deviceSource: 'ble-heart-rate',
+        deviceSource,
         deviceName,
         baseline,
         post,
@@ -70,6 +79,7 @@ function XctsApp({ token, onAuthError }: Props) {
   const handleReset = () => {
     setBaseline(null)
     setPost(null)
+    setDeviceSource('ble-heart-rate')
     setClientName('')
     setTrainerName('')
     setSaveState('idle')
@@ -118,7 +128,7 @@ function XctsApp({ token, onAuthError }: Props) {
             onDeviceNameChange={setDeviceName}
           />
 
-          <XctsResultsPanel baseline={baseline} post={post} deviceName={deviceName} />
+          <XctsResultsPanel baseline={baseline} post={post} deviceName={deviceName} deviceSource={deviceSource} />
 
           {(baseline || post) && (
             <div className="results">

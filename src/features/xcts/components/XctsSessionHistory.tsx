@@ -147,7 +147,12 @@ export function XctsSessionHistory({ refreshKey, token, onAuthError }: Props) {
 
       {detail && (
         <div className="rom-history-detail">
-          <XctsResultsPanel baseline={detail.baseline} post={detail.post} deviceName={detail.deviceName} />
+          <XctsResultsPanel
+            baseline={detail.baseline}
+            post={detail.post}
+            deviceName={detail.deviceName}
+            deviceSource={detail.deviceSource}
+          />
         </div>
       )}
     </div>

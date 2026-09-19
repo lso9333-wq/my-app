@@ -15,17 +15,24 @@ export type XctsModule = 'heartRate'
 // 지금은 도구가 하나뿐이라 탭 전환 UI는 없지만 이 타입 자체는 확장을 염두에 두고 둔다.
 
 /**
- * 이 심박·HRV 데이터가 어떤 경로로 들어왔는지 — 지금은 표준 BLE 심박 서비스
- * (Polar H10 등, Web Bluetooth로 직접 연결) 하나뿐이다. "추후 스마트워치
- * 제조사/개발사와 협업할 경우도 고려해 달라"는 요청에 따라, 나중에 특정 업체와
- * 파트너십을 맺어 그쪽 SDK/OAuth API로 데이터를 받아오게 되면 여기에 새 값(예:
- * 'partner-sdk')을 추가하고 세션에 어떤 경로로 들어온 데이터인지 구분해 저장한다 —
- * 세션 데이터 모델(XctsSessionCreateRequest)과 화면(XctsResultsPanel/
- * XctsSessionHistory)은 source 종류에 무관하게 그대로 동작하도록 설계했다(실제
- * BLE 연결 코드만 src/shared/lib/heartRate/bleHeartRate.ts에 격리돼 있어, 새 소스를
- * 추가할 때 그 파일과 같은 모양의 새 연결 모듈만 만들면 된다).
+ * 이 심박·HRV 데이터가 어떤 경로로 들어왔는지 — "추후 스마트워치 제조사/개발사와
+ * 협업할 경우도 고려해 달라"는 요청에 따라 확장 가능한 유니온으로 설계했다. 실제로
+ * 이 확장성이 그대로 쓰였다: 2026-09에 "삼성 헬스 CSV 업로드" 기능을 추가하면서 새
+ * 값 `'samsung-health-export'`를 여기 하나 더하는 것만으로 세션 데이터 모델
+ * (XctsSessionCreateRequest)과 화면(XctsResultsPanel/XctsSessionHistory)을 다시
+ * 설계할 필요가 없었다 — 서버 쪽도 `deviceSource`를 특정 문자열로 검증하지 않고
+ * "비어있지 않은 문자열인지"만 확인하므로 서버 코드도 그대로였다(server/routes/
+ * xctsSessions.ts 참고). 나중에 특정 업체와 파트너십을 맺어 SDK/OAuth API로 데이터를
+ * 받아오게 되면 같은 방식으로 새 값(예: 'partner-sdk')만 추가하면 된다.
+ *
+ * - `'ble-heart-rate'`: 표준 BLE 심박 서비스(Polar H10 등, Web Bluetooth로 직접 연결).
+ *   실제 연결 코드는 src/shared/lib/heartRate/bleHeartRate.ts.
+ * - `'samsung-health-export'`: 삼성 헬스 앱의 "개인 데이터 다운로드"로 받은 심박수
+ *   CSV 파일을 브라우저에서 직접 파싱(서버 전송 없이) — 파싱 코드는
+ *   src/shared/lib/heartRate/samsungHealthImport.ts. RR간격을 제공하지 않는 파일이라
+ *   HRV(RMSSD)는 계산하지 않는다(항상 null).
  */
-export type XctsMeasurementSource = 'ble-heart-rate'
+export type XctsMeasurementSource = 'ble-heart-rate' | 'samsung-health-export'
 
 export type { HeartRateWindowSummary } from '../../shared/lib/heartRate/heartRateInterpretation'
 import type { HeartRateWindowSummary } from '../../shared/lib/heartRate/heartRateInterpretation'

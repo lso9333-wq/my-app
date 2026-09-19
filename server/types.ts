@@ -480,7 +480,7 @@ export interface DataQualitySummary {
  * 최상위 탭·별도 세션 저장소로 분리했다(사용자의 명시적 결정). 자세한 내용은
  * src/features/xcts/types.ts 참고(프론트/서버 타입 중복 관례).
  */
-export type XctsMeasurementSource = 'ble-heart-rate'
+export type XctsMeasurementSource = 'ble-heart-rate' | 'samsung-health-export'
 
 export interface HeartRateWindowSummary {
   capturedAt: string

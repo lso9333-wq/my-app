@@ -1,10 +1,12 @@
 import { computeHeartRateInterpretation } from '../../../shared/lib/heartRate/heartRateInterpretation'
-import type { HeartRateWindowSummary } from '../types'
+import { SAMSUNG_HEALTH_HRV_NOTE } from '../../../shared/lib/heartRate/samsungHealthImport'
+import type { HeartRateWindowSummary, XctsMeasurementSource } from '../types'
 
 interface Props {
   baseline: HeartRateWindowSummary | null
   post: HeartRateWindowSummary | null
   deviceName?: string | null
+  deviceSource?: XctsMeasurementSource | null
 }
 
 function fmtValue(v: number | null, digits = 1): string {
@@ -33,12 +35,14 @@ const EVIDENCE_LABEL: Record<'approximate' | 'experimental', string> = {
  * 수준 배지, methodology <details>)로 보여준다. baseline/post 둘 다 없으면(아직 아무
  * 것도 캡처하지 않은 세션) 아무것도 렌더링하지 않는다.
  */
-export function XctsResultsPanel({ baseline, post, deviceName }: Props) {
+export function XctsResultsPanel({ baseline, post, deviceName, deviceSource }: Props) {
   if (!baseline && !post) return null
 
   const rows = computeHeartRateInterpretation(baseline, post)
+  const isSamsungHealthImport = deviceSource === 'samsung-health-export'
   const lowSampleWarning =
-    (baseline && baseline.rrIntervalCount < 10) || (post && post.rrIntervalCount < 10)
+    !isSamsungHealthImport &&
+    ((baseline && baseline.rrIntervalCount < 10) || (post && post.rrIntervalCount < 10))
 
   return (
     <div className="rom-xmsk-estimates">
@@ -47,6 +51,11 @@ export function XctsResultsPanel({ baseline, post, deviceName }: Props) {
         ① 안정 상태(활동 전)와 ② 활동 직후 두 시점을 각 60초씩 측정해 그 사이의 변화를 참고용으로 기록한 것입니다.
         의료적 진단이나 정식 심박변이도(HRV) 검사를 대체하지 않습니다 — 아래 방법론 참고.
       </p>
+      {isSamsungHealthImport && (
+        <p className="app-subtitle" style={{ color: '#b45309' }}>
+          ⚠️ {SAMSUNG_HEALTH_HRV_NOTE}
+        </p>
+      )}
       {lowSampleWarning && (
         <p className="app-subtitle" style={{ color: '#b45309' }}>
           ⚠️ 한쪽 이상의 측정에서 RR간격 데이터가 10개 미만입니다 — 센서 접촉이 불안정했거나 캡처 중 움직임이 있었을
