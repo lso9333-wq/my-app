@@ -7,6 +7,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 결과값(답변, 요약, 커밋 메시지 등 사용자에게 보여지는 텍스트)과 설명은 항상 한국어로 작성한다.
 - 코드, 변수명, 파일명 등 코드 자체의 관례는 기존 방식(영어)을 따른다.
 
+## 응답 형식 지침 (2026-09, 사용자 요청)
+
+- 코드 수정, 명령어 실행, diff 확인 등의 결과를 보여줄 때, 사용자가 다음 단계에서 그대로
+  복사해서 쓸 만한 지시문(예: "push해줘", "배포 진행해줘" 등 다음 턴에 그대로 입력할 만한
+  문장)이 있다면 항상 별도의 코드 블록으로 감싸서 보여준다 — 대화체 설명 문장 속에 섞지
+  않고, 복사하기 편하게 따로 떼어서 제시한다. 이 규칙은 세션이 바뀌어도 계속 적용된다.
+
 ## Commands
 
 - `npm run dev` — run Vite dev server + API server together (via `concurrently`)
