@@ -34,54 +34,65 @@ function csvWithMetadataLine(rows: string[]): string {
 
 describe('parseAgesIndexCsv', () => {
   it('raw 파일명은 내용과 무관하게 거부한다', () => {
-    const csv = csvWithMetadataLine(['1,1,1,1,1700000000000,1700000000000,464,uuid,{},pkg,data,1700000000000'])
+    const csv = csvWithMetadataLine([
+      '1,1,1,1,2026-09-24 07:00:00.000,2026-09-24 07:00:00.000,464,uuid,{},pkg,data,2026-09-24 07:00:00.000',
+    ])
     expect(() => parseAgesIndexCsv(csv, 'com.samsung.health.advanced_glycation_endproduct.raw.1234.csv')).toThrow(
       AgesIndexImportError,
     )
   })
 
-  it('메타데이터 줄을 건너뛰고 score/day_time을 정확히 뽑아 등급까지 계산한다', () => {
+  it('메타데이터 줄을 건너뛰고 score/day_time을 정확히 뽑아 등급까지 계산한다 (실제 확인된 문자열 포맷)', () => {
     const records = parseAgesIndexCsv(
       csvWithMetadataLine([
-        '1,1,1,1,1700000000000,1700000000000,464,uuid,{},pkg,data,1700000000000',
+        '1,1,1,1,2026-09-24 07:00:00.000,2026-09-24 07:00:00.000,464,uuid,{},pkg,data,2026-09-24 07:00:00.000',
       ]),
       'com.samsung.health.advanced_glycation_endproduct.1234.csv',
     )
     expect(records).toHaveLength(1)
     expect(records[0].score).toBe(464)
     expect(records[0].grade).toBe('적절')
-    expect(records[0].dayTimeRaw).toBe('1700000000000')
-    // 에폭 밀리초로 인식돼 YYYY-MM-DD 형태로 변환됐어야 한다.
-    expect(records[0].dayTimeLabel).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+    expect(records[0].dayTimeRaw).toBe('2026-09-24 07:00:00.000')
+    expect(records[0].dayTimeLabel).toBe('2026-09-24')
   })
 
   it('여러 날짜의 기록을 최신순으로 정렬해 반환한다', () => {
     const records = parseAgesIndexCsv(
       csvWithMetadataLine([
-        '1,1,1,1,0,0,400,uuid,{},pkg,data,1700000000000',
-        '1,1,1,1,0,0,900,uuid,{},pkg,data,1700200000000',
-        '1,1,1,1,0,0,600,uuid,{},pkg,data,1700100000000',
+        '1,1,1,1,x,x,400,uuid,{},pkg,data,2026-09-20 07:00:00.000',
+        '1,1,1,1,x,x,900,uuid,{},pkg,data,2026-09-23 07:00:00.000',
+        '1,1,1,1,x,x,600,uuid,{},pkg,data,2026-09-21 07:00:00.000',
       ]),
       'com.samsung.health.advanced_glycation_endproduct.1234.csv',
     )
-    expect(records.map((r) => r.dayTimeRaw)).toEqual(['1700200000000', '1700100000000', '1700000000000'])
+    expect(records.map((r) => r.dayTimeLabel)).toEqual(['2026-09-23', '2026-09-21', '2026-09-20'])
     expect(records.map((r) => r.grade)).toEqual(['높음', '주의', '낮음'])
   })
 
-  it('day_time이 숫자가 아니어도(Date.parse 가능한 문자열) 최선을 다해 라벨을 만든다', () => {
+  it('day_time이 순수 숫자 문자열이면(확인되지 않은 다른 내보내기 대비 폴백) 에폭 밀리초로 시도한다', () => {
     const records = parseAgesIndexCsv(
-      csvWithMetadataLine(['1,1,1,1,0,0,464,uuid,{},pkg,data,2026-09-20 10:00:00.000']),
+      csvWithMetadataLine(['1,1,1,1,x,x,464,uuid,{},pkg,data,1700000000000']),
       'com.samsung.health.advanced_glycation_endproduct.1234.csv',
     )
-    expect(records[0].dayTimeLabel).toBe('2026-09-20')
+    expect(records[0].dayTimeRaw).toBe('1700000000000')
+    expect(records[0].dayTimeLabel).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+  })
+
+  it('day_time을 어느 방식으로도 해석할 수 없으면 dayTimeLabel이 null이고 dayTimeRaw는 보존된다', () => {
+    const records = parseAgesIndexCsv(
+      csvWithMetadataLine(['1,1,1,1,x,x,464,uuid,{},pkg,data,알수없는형식']),
+      'com.samsung.health.advanced_glycation_endproduct.1234.csv',
+    )
+    expect(records[0].dayTimeRaw).toBe('알수없는형식')
+    expect(records[0].dayTimeLabel).toBeNull()
   })
 
   it('score/day_time 값이 비어있는 행은 건너뛴다', () => {
     const records = parseAgesIndexCsv(
       csvWithMetadataLine([
-        '1,1,1,1,0,0,,uuid,{},pkg,data,1700000000000',
-        '1,1,1,1,0,0,464,uuid,{},pkg,data,',
-        '1,1,1,1,0,0,464,uuid,{},pkg,data,1700000000000',
+        '1,1,1,1,x,x,,uuid,{},pkg,data,2026-09-24 07:00:00.000',
+        '1,1,1,1,x,x,464,uuid,{},pkg,data,',
+        '1,1,1,1,x,x,464,uuid,{},pkg,data,2026-09-24 07:00:00.000',
       ]),
       'com.samsung.health.advanced_glycation_endproduct.1234.csv',
     )
@@ -96,7 +107,7 @@ describe('parseAgesIndexCsv', () => {
 
   it('유효한 값이 하나도 없으면 에러를 던진다', () => {
     expect(() =>
-      parseAgesIndexCsv(csvWithMetadataLine(['1,1,1,1,0,0,,uuid,{},pkg,data,']), 'x.advanced_glycation_endproduct.1234.csv'),
+      parseAgesIndexCsv(csvWithMetadataLine(['1,1,1,1,x,x,,uuid,{},pkg,data,']), 'x.advanced_glycation_endproduct.1234.csv'),
     ).toThrow(AgesIndexImportError)
   })
 })

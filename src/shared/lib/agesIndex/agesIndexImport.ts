@@ -34,6 +34,14 @@
 // 형식에는 포함돼 있지 않아 직접 읽을 방법이 없다)과 정확히 일치하지 않을 수 있다 —
 // computeAgesIndexGrade() 참고. 나중에 실제 level_boundary 값을 확인할 방법이
 // 생기면 이 고정 구간을 대체해야 한다.
+//
+// **day_time 포맷 교정(2026-09)**: 처음 작성할 때는 실제 값을 몰라 "에폭 밀리초일
+// 가능성이 높다"는 추측을 우선순위로 뒀는데, 사용자가 실제 CSV 샘플로 확인해준
+// 진짜 포맷은 update_time/create_time과 똑같은 공백 구분 문자열
+// (`"2026-09-24 07:00:00.000"`)이었다 — samsungHealthImport.ts가 heart_rate의
+// start_time 컬럼에 쓰는 것과 정확히 같은 형식이다. parseDayTimeLabel()은 이제 이
+// 문자열 포맷을 우선 시도하고, 에폭 밀리초 숫자 문자열은 확인되지 않은 다른
+// 버전/지역 내보내기에 대비한 폴백으로만 남겨뒀다.
 
 export class AgesIndexImportError extends Error {}
 
@@ -162,16 +170,25 @@ function findColumnIndex(header: string[], exactName: string, keywords: string[]
 }
 
 /**
- * day_time 값을 사람이 읽을 수 있는 날짜(YYYY-MM-DD)로 변환 시도한다 — 정확한
- * 포맷을 실제 파일로 확인하지 못해 두 가지를 순서대로 시도하는 관대한 방식이다:
- * ① 순수 숫자 문자열이면 에폭 밀리초로 간주(삼성 헬스의 여러 시간류 컬럼에서 흔한
- * 표현 — 대략 1970~2100년대 범위의 자리수만 받아들인다), ② 그게 아니면
- * samsungHealthImport.ts의 parseSamsungHealthTimestamp와 같은 방식으로 Date.parse를
- * 시도한다. 둘 다 실패하면 null — 호출부는 dayTimeRaw를 그대로 보여주면 된다.
+ * day_time 값을 사람이 읽을 수 있는 날짜(YYYY-MM-DD)로 변환한다.
+ *
+ * 실제 삼성 헬스 CSV로 확인된 포맷(2026-09)은 update_time/create_time과 같은 공백
+ * 구분 문자열 — 예: `"2026-09-24 07:00:00.000"` — 이라, samsungHealthImport.ts의
+ * parseSamsungHealthTimestamp와 같은 방식(공백을 "T"로 바꿔 Date.parse)으로 이걸
+ * 최우선으로 시도한다. 그게 실패하고 순수 숫자 문자열이면 에폭 밀리초일 가능성에
+ * 대비해 폴백으로 한 번 더 시도한다 — 이 폴백 경로는 확인된 적 없는, 다른 버전/
+ * 지역 내보내기에 대한 방어적 대비일 뿐이다. 둘 다 실패하면 null — 호출부는
+ * dayTimeRaw를 그대로 보여주면 된다.
  */
 function parseDayTimeLabel(raw: string): string | null {
   const trimmed = raw.trim()
   if (!trimmed) return null
+
+  const candidates = trimmed.includes('T') ? [trimmed] : [trimmed.replace(' ', 'T'), trimmed]
+  for (const candidate of candidates) {
+    const parsedMs = Date.parse(candidate)
+    if (Number.isFinite(parsedMs)) return formatDateLabel(new Date(parsedMs))
+  }
 
   if (/^\d+$/.test(trimmed)) {
     const ms = Number(trimmed)
@@ -179,12 +196,6 @@ function parseDayTimeLabel(raw: string): string | null {
       const d = new Date(ms)
       if (!Number.isNaN(d.getTime())) return formatDateLabel(d)
     }
-  }
-
-  const candidates = trimmed.includes('T') ? [trimmed] : [trimmed.replace(' ', 'T'), trimmed]
-  for (const candidate of candidates) {
-    const parsedMs = Date.parse(candidate)
-    if (Number.isFinite(parsedMs)) return formatDateLabel(new Date(parsedMs))
   }
 
   return null
