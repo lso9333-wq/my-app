@@ -7,6 +7,7 @@ import { gaitDiagnosticsRouter } from './routes/gaitDiagnostics.js'
 import { handSessionsRouter } from './routes/handSessions.js'
 import { homeSummaryRouter } from './routes/homeSummary.js'
 import { romSessionsRouter } from './routes/romSessions.js'
+import { xctsAgesIndexRouter } from './routes/xctsAgesIndex.js'
 import { xctsSessionsRouter } from './routes/xctsSessions.js'
 import { xmskRouter } from './routes/xmsk.js'
 
@@ -22,6 +23,7 @@ app.use('/api/gait-diagnostics', gaitDiagnosticsRouter)
 app.use('/api/hand-sessions', handSessionsRouter)
 app.use('/api/foot-sessions', footSessionsRouter)
 app.use('/api/xcts-sessions', xctsSessionsRouter)
+app.use('/api/xcts-ages-index', xctsAgesIndexRouter)
 app.use('/api/eeg-sessions', eegSessionsRouter)
 app.use('/api/home-summary', homeSummaryRouter)
 

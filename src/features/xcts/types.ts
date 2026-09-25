@@ -69,3 +69,40 @@ export interface XctsSessionDetail extends XctsSessionListItem {
   post: HeartRateWindowSummary | null
   note: string | null
 }
+
+// --- 최종당화산물지수(AGEs Index) 기록 (2026-09) ---
+//
+// 심박·HRV 세션(XctsSessionCreateRequest)과 저장소를 공유하지 않는다 — 심박 세션은
+// "하나의 baseline/post 스냅샷"이 한 세션인 반면, 최종당화산물지수는 CSV 한 번
+// 업로드에 여러 날짜의 기록이 함께 들어있고 그걸 시계열로 쌓아 보여주는 게 목적이라
+// 근본적으로 다른 데이터 모양이다(agesIndexImport.ts 상단 주석 참고). XCTS 탭 안에서
+// 심박 측정 UI 근처에 얹혀 있지만 서버 쪽은 별도 테이블/엔드포인트
+// (server/routes/xctsAgesIndex.ts, /api/xcts-ages-index)를 쓴다 — hand_sessions/
+// foot_sessions처럼 "기능별 테이블 하나"를 쓰는 이 프로젝트의 기존 관례를 그대로
+// 따른 것.
+export type { AgesIndexRecord } from '../../shared/lib/agesIndex/agesIndexImport'
+import type { AgesIndexRecord } from '../../shared/lib/agesIndex/agesIndexImport'
+
+export interface AgesIndexUploadRequest {
+  clientName: string
+  trainerName?: string
+  deviceSource: XctsMeasurementSource
+  /** parseAgesIndexCsv()가 만든 날짜별 기록 배열을 그대로 실어 보낸다 — 한 번의
+   * 업로드가 여러 날짜의 기록을 한꺼번에 저장하는 벌크 삽입이다. */
+  records: AgesIndexRecord[]
+}
+
+export interface AgesIndexUploadResponse {
+  insertedCount: number
+}
+
+export interface AgesIndexRecordListItem {
+  id: number
+  createdAt: string
+  clientName: string
+  trainerName: string | null
+  dayTimeRaw: string
+  dayTimeLabel: string | null
+  score: number
+  grade: string
+}

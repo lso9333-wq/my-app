@@ -1,7 +1,16 @@
-import type { XctsSessionCreateRequest, XctsSessionCreateResponse, XctsSessionDetail, XctsSessionListItem } from '../types'
+import type {
+  AgesIndexRecordListItem,
+  AgesIndexUploadRequest,
+  AgesIndexUploadResponse,
+  XctsSessionCreateRequest,
+  XctsSessionCreateResponse,
+  XctsSessionDetail,
+  XctsSessionListItem,
+} from '../types'
 import { authHeaders, expectNoContentAuthAware, parseAuthAwareJson } from '../../../shared/lib/authApi'
 
 const BASE = '/api/xcts-sessions'
+const AGES_INDEX_BASE = '/api/xcts-ages-index'
 
 // 다른 4개 트레이너 도구(보행/ROM/손발/XMSK)와 같은 앱 전체 로그인을 그대로 쓴다
 // (App.tsx의 GATED_TABS, server/xmskAuth.ts의 requireAuth 참고) — XCTS만 별도
@@ -33,5 +42,30 @@ export async function getXctsSession(token: string, id: number): Promise<XctsSes
 
 export async function deleteXctsSession(token: string, id: number): Promise<void> {
   const res = await fetch(`${BASE}/${id}`, { method: 'DELETE', headers: authHeaders(token) })
+  return expectNoContentAuthAware(res)
+}
+
+// --- 최종당화산물지수(AGEs Index) — xcts_sessions와 별도 저장소(types.ts 참고). ---
+
+export async function uploadAgesIndexRecords(
+  token: string,
+  req: AgesIndexUploadRequest,
+): Promise<AgesIndexUploadResponse> {
+  const res = await fetch(AGES_INDEX_BASE, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(req),
+  })
+  return parseAuthAwareJson(res)
+}
+
+export async function listAgesIndexRecords(token: string, limit = 100): Promise<AgesIndexRecordListItem[]> {
+  const res = await fetch(`${AGES_INDEX_BASE}?limit=${limit}`, { headers: authHeaders(token) })
+  const data = await parseAuthAwareJson<{ records: AgesIndexRecordListItem[] }>(res)
+  return data.records
+}
+
+export async function deleteAgesIndexRecord(token: string, id: number): Promise<void> {
+  const res = await fetch(`${AGES_INDEX_BASE}/${id}`, { method: 'DELETE', headers: authHeaders(token) })
   return expectNoContentAuthAware(res)
 }

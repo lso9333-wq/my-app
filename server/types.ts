@@ -512,6 +512,34 @@ export interface XctsSessionRow {
   note: string | null
 }
 
+// --- 최종당화산물지수(AGEs Index) 기록 (2026-09) — xcts_sessions와 별도 테이블
+// (xcts_ages_index_records). 프론트엔드 타입 중복 관례(src/features/xcts/types.ts 참고).
+export interface AgesIndexRecordInput {
+  dayTimeRaw: string
+  dayTimeLabel: string | null
+  score: number
+  grade: string
+}
+
+export interface AgesIndexUploadRequest {
+  clientName: string
+  trainerName?: string
+  deviceSource: string
+  records: AgesIndexRecordInput[]
+}
+
+export interface AgesIndexRecordRow {
+  id: number
+  created_at: string
+  client_name: string
+  trainer_name: string | null
+  device_source: string
+  day_time_raw: string
+  day_time_label: string | null
+  score: number
+  grade: string
+}
+
 export interface GaitDiagnosticRow {
   id: number
   created_at: string

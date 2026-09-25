@@ -2,6 +2,8 @@ import { DatabaseSync } from 'node:sqlite'
 import { mkdirSync } from 'node:fs'
 import path from 'node:path'
 import type {
+  AgesIndexRecordRow,
+  AgesIndexUploadRequest,
   EegSessionCreateRequest,
   EegSessionRow,
   FootSessionCreateRequest,
@@ -649,6 +651,76 @@ const deleteXctsStmt = db.prepare(`DELETE FROM xcts_sessions WHERE id = ?`)
 
 export function deleteXctsSession(id: number): boolean {
   return Number(deleteXctsStmt.run(id).changes) > 0
+}
+
+// ============================================================
+// 최종당화산물지수(AGEs Index) 기록 (xcts_ages_index_records, 2026-09)
+// ============================================================
+//
+// xcts_sessions와 별도 테이블이다 — 심박 세션은 "하나의 baseline/post 스냅샷"이
+// 한 세션인 반면, 이 CSV 업로드는 한 번에 여러 날짜의 기록을 함께 저장하는 벌크
+// 삽입이라 데이터 모양 자체가 다르다(src/features/xcts/types.ts 참고).
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS xcts_ages_index_records (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    created_at      TEXT NOT NULL,
+    client_name     TEXT NOT NULL,
+    trainer_name    TEXT,
+    device_source   TEXT NOT NULL,
+    day_time_raw    TEXT NOT NULL,
+    day_time_label  TEXT,
+    score           REAL NOT NULL,
+    grade           TEXT NOT NULL
+  )
+`)
+
+const insertAgesIndexStmt = db.prepare(`
+  INSERT INTO xcts_ages_index_records
+    (created_at, client_name, trainer_name, device_source, day_time_raw, day_time_label, score, grade)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+`)
+
+const AGES_INDEX_SELECT_COLUMNS = `
+  id, created_at, client_name, trainer_name, device_source, day_time_raw, day_time_label, score, grade
+`
+
+const listAgesIndexStmt = db.prepare(`
+  SELECT ${AGES_INDEX_SELECT_COLUMNS}
+  FROM xcts_ages_index_records
+  ORDER BY (day_time_label IS NULL) ASC, day_time_label DESC, id DESC
+  LIMIT ?
+`)
+
+/** 한 번의 CSV 업로드가 여러 날짜의 기록을 한꺼번에 저장하는 벌크 삽입이라, 단건
+ * insertXctsSession()과 달리 배열 전체를 받아 반복 삽입한다 — node:sqlite는 이
+ * 프로젝트 규모(개인용 앱)에서 명시적 트랜잭션 래핑 없이도 충분하다고 판단했다
+ * (다른 배치 성격 작업이 없는 것과 같은 이유). */
+export function insertAgesIndexRecords(req: AgesIndexUploadRequest): { insertedCount: number } {
+  const createdAt = new Date().toISOString()
+  for (const record of req.records) {
+    insertAgesIndexStmt.run(
+      createdAt,
+      req.clientName,
+      req.trainerName ?? null,
+      req.deviceSource,
+      record.dayTimeRaw,
+      record.dayTimeLabel,
+      record.score,
+      record.grade,
+    )
+  }
+  return { insertedCount: req.records.length }
+}
+
+export function listAgesIndexRecords(limit: number): AgesIndexRecordRow[] {
+  return listAgesIndexStmt.all(limit) as unknown as AgesIndexRecordRow[]
+}
+
+const deleteAgesIndexStmt = db.prepare(`DELETE FROM xcts_ages_index_records WHERE id = ?`)
+
+export function deleteAgesIndexRecord(id: number): boolean {
+  return Number(deleteAgesIndexStmt.run(id).changes) > 0
 }
 
 // ============================================================

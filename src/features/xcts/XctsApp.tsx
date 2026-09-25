@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { AgesIndexHistory } from './components/AgesIndexHistory'
+import { AgesIndexUpload } from './components/AgesIndexUpload'
 import { HeartRateCaptureControl } from './components/HeartRateCaptureControl'
 import { XctsResultsPanel } from './components/XctsResultsPanel'
 import { XctsSessionHistory } from './components/XctsSessionHistory'
@@ -39,6 +41,7 @@ function XctsApp({ token, onAuthError }: Props) {
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [saveError, setSaveError] = useState<string | null>(null)
   const [historyKey, setHistoryKey] = useState(0)
+  const [agesIndexHistoryKey, setAgesIndexHistoryKey] = useState(0)
 
   const handleCaptured = (
     phase: 'baseline' | 'post',
@@ -127,6 +130,18 @@ function XctsApp({ token, onAuthError }: Props) {
             onCaptured={handleCaptured}
             onDeviceNameChange={setDeviceName}
           />
+
+          {/* 최종당화산물지수는 심박·HRV와 별개의 데이터 모양(날짜별 기록 여러 건)이라
+              baseline/post 세션에 얹지 않고 자체 업로드·저장소를 쓴다 — types.ts 상단
+              주석 참고. 화면 위치만 삼성 헬스 CSV 업로드 버튼 근처에 뒀다(요구사항). */}
+          <AgesIndexUpload
+            clientName={clientName}
+            trainerName={trainerName}
+            token={token}
+            onAuthError={onAuthError}
+            onSaved={() => setAgesIndexHistoryKey((k) => k + 1)}
+          />
+          <AgesIndexHistory refreshKey={agesIndexHistoryKey} token={token} onAuthError={onAuthError} />
 
           <XctsResultsPanel baseline={baseline} post={post} deviceName={deviceName} deviceSource={deviceSource} />
 
